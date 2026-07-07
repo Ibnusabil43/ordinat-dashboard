@@ -6,6 +6,7 @@ Dashboard for school psychotest sessions — schedule, per-subtest test links, a
 - **Coding & architecture guide:** [CLAUDE.md](CLAUDE.md)
 - **Design spec:** [docs/DESIGN.md](docs/DESIGN.md)
 - **Backlog:** [docs/STORIES_BACKEND.md](docs/STORIES_BACKEND.md) · [docs/STORIES_FRONTEND.md](docs/STORIES_FRONTEND.md)
+- **Build order:** [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ## Stack
 

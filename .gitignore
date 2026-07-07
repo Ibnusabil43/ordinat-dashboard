@@ -9,7 +9,10 @@ build
 next-env.d.ts
 /prisma/*.db
 coverage
+tsconfig.tsbuildinfo
 
 # Internal planning docs — not meant to ship in the repo
 /docs/
 CLAUDE.md
+package-lock.json
+package.json

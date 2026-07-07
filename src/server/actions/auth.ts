@@ -27,7 +27,14 @@ export async function signIn(
     return { error: "Email atau password salah." };
   }
 
-  redirect("/admin");
+  // Honor middleware's ?next= redirect target, but only if it's an internal
+  // /admin path — never redirect to an arbitrary URL from user input.
+  const next = formData.get("next");
+  const destination =
+    typeof next === "string" && next.startsWith("/admin") && next !== "/admin/login"
+      ? next
+      : "/admin";
+  redirect(destination);
 }
 
 export async function signOutAction() {
