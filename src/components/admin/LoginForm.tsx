@@ -28,16 +28,16 @@ export function LoginForm() {
       <input type="hidden" name="next" value={next} />
 
       <div>
-        <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-zinc-900">
-          Email
+        <label htmlFor="username" className="mb-1.5 block text-sm font-medium text-zinc-900">
+          Username
         </label>
         <input
-          id="email"
-          name="email"
-          type="email"
+          id="username"
+          name="username"
+          type="text"
           required
-          autoComplete="email"
-          placeholder="admin@ordinat.id"
+          autoComplete="username"
+          placeholder="Username"
           className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
         />
       </div>

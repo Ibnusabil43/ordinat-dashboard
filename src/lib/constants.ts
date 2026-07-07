@@ -39,3 +39,26 @@ export const SUBTEST_CODES = SUBTEST_TYPES.map((s) => s.code);
 export function suggestTinyUrl(slug: string, code: string): string {
   return `http://tiny.cc/${slug}-${code}`;
 }
+
+/**
+ * Admin login uses a username, but Supabase Auth is email-based under the
+ * hood — there is no native "username" concept in Supabase Auth. Every
+ * username is mapped to a synthetic email under this fixed internal domain
+ * before calling supabase.auth.signInWithPassword. This domain is never
+ * used for real mail delivery.
+ *
+ * IMPORTANT: when creating a new admin account (Supabase Studio > Add user,
+ * or the Admin API), the "email" field must be set to
+ * `{desired-username}@${AUTH_EMAIL_DOMAIN}` — anything else won't be
+ * reachable through the login form. See CLAUDE.md > Auth model.
+ */
+export const AUTH_EMAIL_DOMAIN = "ordinat.id";
+
+export function usernameToAuthEmail(username: string): string {
+  return `${username.trim().toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
+}
+
+/** Inverse of usernameToAuthEmail — for display only (e.g. sidebar footer). */
+export function authEmailToUsername(email: string): string {
+  return email.split(`@${AUTH_EMAIL_DOMAIN}`)[0] ?? email;
+}

@@ -36,7 +36,14 @@ export const subtestLinksSchema = z.object({
 });
 export type SubtestLinksInput = z.infer<typeof subtestLinksSchema>;
 
+// Username, not email — mapped to a synthetic email internally.
+// See usernameToAuthEmail in src/lib/constants.ts and CLAUDE.md > Auth model.
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email(),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Username minimal 3 karakter")
+    .regex(/^[a-z0-9_.-]+$/, "Username hanya boleh huruf kecil, angka, titik, underscore, dan dash"),
   password: z.string().min(1),
 });

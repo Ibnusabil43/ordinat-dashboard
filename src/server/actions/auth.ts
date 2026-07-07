@@ -8,23 +8,27 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema } from "@/lib/validations";
+import { usernameToAuthEmail } from "@/lib/constants";
 
 export async function signIn(
   _prevState: { error?: string } | undefined,
   formData: FormData,
 ): Promise<{ error?: string }> {
   const parsed = loginSchema.safeParse({
-    email: formData.get("email"),
+    username: formData.get("username"),
     password: formData.get("password"),
   });
   if (!parsed.success) {
-    return { error: "Email atau password tidak valid." };
+    return { error: "Username atau password tidak valid." };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { error } = await supabase.auth.signInWithPassword({
+    email: usernameToAuthEmail(parsed.data.username),
+    password: parsed.data.password,
+  });
   if (error) {
-    return { error: "Email atau password salah." };
+    return { error: "Username atau password salah." };
   }
 
   // Honor middleware's ?next= redirect target, but only if it's an internal

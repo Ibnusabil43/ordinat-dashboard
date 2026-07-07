@@ -22,7 +22,7 @@ npm run db:seed           # seed the 12 subtests
 npm run dev                # http://localhost:3000
 ```
 
-Then create the first admin account in **Supabase Studio > Authentication > Add user** — there's no signup flow in the app and no seed script for it (any user in this Supabase project is treated as an admin; see CLAUDE.md > Auth model).
+Then create the first admin account in **Supabase Studio > Authentication > Add user**, with the email field set to `{username}@ordinat.id` — login is username-based in the UI, but Supabase Auth is email-only under the hood (see CLAUDE.md > Auth model for why). There's no signup flow in the app and no seed script for this step; any user in this Supabase project is treated as an admin.
 
 ## Quick structure
 

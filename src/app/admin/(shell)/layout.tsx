@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/admin/Sidebar";
 import { createClient } from "@/lib/supabase/server";
+import { authEmailToUsername } from "@/lib/constants";
 
 /**
  * Shell for every authenticated admin page. Deliberately NOT applied to
@@ -22,7 +23,7 @@ export default async function AdminShellLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 sm:flex-row">
-      <Sidebar email={user?.email ?? ""} />
+      <Sidebar username={user?.email ? authEmailToUsername(user.email) : ""} />
       <main className="flex-1">{children}</main>
     </div>
   );

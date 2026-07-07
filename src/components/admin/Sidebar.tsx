@@ -26,7 +26,7 @@ const MENU: { href: string; label: string; icon: LucideIcon }[] = [
 ];
 
 /** Desktop: fixed left sidebar. Mobile: top bar + drawer. Spec: DESIGN.md §6. */
-export function Sidebar({ email }: { email: string }) {
+export function Sidebar({ username }: { username: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -56,7 +56,7 @@ export function Sidebar({ email }: { email: string }) {
 
   const footer = (
     <div className="border-t border-zinc-200 p-3">
-      <p className="truncate px-3 text-xs text-zinc-500">{email}</p>
+      <p className="truncate px-3 text-xs text-zinc-500">{username}</p>
       <form action={signOutAction}>
         <button
           type="submit"
