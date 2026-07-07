@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — monokrom profesional (referensi: Linear/Vercel/Notion).
+ * Status TIDAK dibedakan lewat hue; gunakan intensitas zinc + ikon.
+ * Satu-satunya warna non-abu: --color-danger (khusus aksi hapus & error).
+ */
+@theme {
+  --color-bg: #fafafa; /* zinc-50  */
+  --color-surface: #ffffff;
+  --color-border: #e4e4e7; /* zinc-200 */
+  --color-fg: #18181b; /* zinc-900 */
+  --color-muted: #71717a; /* zinc-500 */
+  --color-primary: #18181b; /* zinc-900 — tombol utama */
+  --color-primary-hover: #3f3f46; /* zinc-700 */
+  --color-danger: #dc2626; /* red-600  */
+
+  --radius-card: 14px;
+  --radius-control: 8px;
+
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}

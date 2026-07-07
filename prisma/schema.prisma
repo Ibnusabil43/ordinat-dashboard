@@ -1,0 +1,89 @@
+// Ordinat Dashboard — data schema.
+// Schema changes: `npx prisma migrate dev --name <description>` then `npx prisma generate`.
+//
+// NOTE: identity/auth lives entirely in Supabase's own `auth` schema
+// (auth.users), managed by Supabase Auth — not modeled here. There is no
+// local User/Role table: any user that can sign in to this Supabase project
+// IS an admin (no public signup, no roles). See CLAUDE.md > Auth model.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Pooled (pgbouncer) connection — used at runtime by the app.
+  url       = env("DATABASE_URL")
+  // Direct connection — required by Prisma Migrate, bypasses the pooler.
+  directUrl = env("DIRECT_URL")
+}
+
+enum EventStatus {
+  SCHEDULED // Terjadwal
+  ONGOING   // Sedang Psikotes
+  REKAP     // Tahap Rekap
+  DONE      // Tahap Resume
+}
+
+model School {
+  id        String          @id @default(cuid())
+  name      String // "SMAN 1 CIWARINGIN"
+  slug      String          @unique // "CIWARINGIN26" — used in the tiny.cc URL pattern
+  events    PsikotesEvent[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([name])
+}
+
+// Fixed lookup; seeded once from SUBTEST_TYPES (src/lib/constants.ts).
+// `code` must match the RAW sheet name used by the Automated Recap tool.
+model SubtestType {
+  id    String        @id @default(cuid())
+  code  String        @unique // EPPS, SE, WA, AN, GE, RA, ZR, FA, WU, ME, RIASEC, GB
+  label String
+  order Int           @default(0)
+  links SubtestLink[]
+}
+
+model PsikotesEvent {
+  id            String        @id @default(cuid())
+  schoolId      String
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  scheduledDate DateTime
+  status        EventStatus   @default(SCHEDULED)
+  links         SubtestLink[]
+  recapJobs     RecapJob[]
+  createdById   String? // auth.users.id (Supabase) of the admin who created this event — no FK, cross-schema
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([schoolId])
+  @@index([status])
+  @@index([scheduledDate])
+}
+
+model SubtestLink {
+  id            String        @id @default(cuid())
+  eventId       String
+  event         PsikotesEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  subtestTypeId String
+  subtestType   SubtestType   @relation(fields: [subtestTypeId], references: [id], onDelete: Cascade)
+  url           String
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([eventId, subtestTypeId]) // one URL per subtest per event
+}
+
+// Audit trail for every time the "Mulai Rekap" flag is pressed in the tool (via internal webhook).
+// Does not store the recap file — it's generated & downloaded directly from the Flask tool.
+model RecapJob {
+  id          String        @id @default(cuid())
+  eventId     String
+  event       PsikotesEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  triggeredBy String // admin email who pressed the flag in the tool
+  startedAt   DateTime      @default(now())
+  finishedAt  DateTime? // set when the admin presses "Tandai Selesai" in the Rekap Menu
+
+  @@index([eventId])
+}
