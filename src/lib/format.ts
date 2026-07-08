@@ -17,3 +17,18 @@ export function formatDateID(date: Date): string {
 export function toDateInputValue(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
+
+/**
+ * Builds the "copy all links" plain-text block for the public school detail
+ * page — see DESIGN.md §5 "Copy-all-links button" and PRD FR-2 for the exact
+ * format. School name is forced uppercase; subtests without a url are
+ * skipped (no blank lines); `label` is used, not `code` (matters for
+ * Gaya Belajar / GB).
+ */
+export function buildLinkCopyText(
+  schoolName: string,
+  links: { label: string; url: string }[],
+): string {
+  const lines = links.filter((l) => l.url).map((l) => `${l.label} : ${l.url}`);
+  return [`LINK PSIKOTES ${schoolName.toUpperCase()}`, ...lines].join("\n");
+}
