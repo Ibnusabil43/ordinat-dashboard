@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "@/components/admin/LoginForm";
 
 export default function LoginPage() {
@@ -8,7 +9,11 @@ export default function LoginPage() {
           <span className="text-xl font-bold tracking-tight text-zinc-900">Ordinat Dashboard</span>
           <p className="mt-1 text-sm text-zinc-500">Masuk untuk mengelola jadwal psikotes.</p>
         </div>
-        <LoginForm />
+        {/* LoginForm reads useSearchParams (?next=) — Suspense boundary is
+            required for static prerendering, otherwise the build bails. */}
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </main>
   );

@@ -17,8 +17,15 @@ export const schoolSchema = z.object({
 export type SchoolInput = z.infer<typeof schoolSchema>;
 
 export const eventSchema = z.object({
-  schoolId: z.string().cuid(),
-  scheduledDate: z.coerce.date(),
+  schoolId: z.string().min(1, "Pilih sekolah").cuid("Sekolah tidak valid"),
+  // Kept as a string so we control the (Indonesian) messages; coerce.date's
+  // invalid-date message can't be overridden reliably. Transformed to a Date
+  // for Prisma. Input is "YYYY-MM-DD" from <input type="date">.
+  scheduledDate: z
+    .string()
+    .min(1, "Tanggal wajib diisi")
+    .refine((s) => !Number.isNaN(new Date(s).getTime()), "Tanggal tidak valid")
+    .transform((s) => new Date(s)),
 });
 export type EventInput = z.infer<typeof eventSchema>;
 
