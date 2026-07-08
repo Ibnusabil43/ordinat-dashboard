@@ -1,8 +1,18 @@
-export default function Page() {
+import { getSchools } from "@/lib/queries/schools";
+import { SchoolGrid } from "@/components/SchoolGrid";
+
+export default async function HomePage() {
+  const schools = await getSchools();
+
   return (
-    <main className="p-6">
-      <h1 className="text-lg font-semibold text-zinc-900">Beranda</h1>
-      <p className="mt-1 text-sm text-zinc-500">TODO: grid kartu sekolah + search (publik)</p>
-    </main>
+    <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Ordinat Dashboard</h1>
+        <p className="mt-2 text-sm text-zinc-500">
+          Cek jadwal psikotes, link tes, dan progress pelaksanaan untuk sekolahmu.
+        </p>
+      </div>
+      <SchoolGrid schools={schools} />
+    </div>
   );
 }
