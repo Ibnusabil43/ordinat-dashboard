@@ -26,6 +26,7 @@ export interface EventActionState {
  */
 function revalidateEventPaths(opts: { id?: string; slug?: string } = {}) {
   revalidatePath("/admin/jadwal");
+  revalidatePath("/admin/rekap");
   revalidatePath("/admin");
   revalidatePath("/");
   if (opts.id) revalidatePath(`/admin/jadwal/${opts.id}`);
@@ -113,6 +114,45 @@ export async function advanceToOngoing(id: string): Promise<{ error?: string }> 
     await prisma.psikotesEvent.update({ where: { id }, data: { status: "ONGOING" } });
   } catch {
     return { error: "Gagal mengubah status. Coba lagi." };
+  }
+
+  revalidateEventPaths({ id, slug: event.school.slug });
+  return {};
+}
+
+/**
+ * REKAP → DONE (BE-C4). Called by the Rekap Menu's "Tandai Selesai" button.
+ * Final and irreversible — no action moves status backward. Also closes the
+ * open RecapJob (the one still missing a finishedAt) so the audit trail
+ * records when recap actually finished.
+ */
+export async function markResume(id: string): Promise<{ error?: string }> {
+  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+
+  const event = await prisma.psikotesEvent.findUnique({
+    where: { id },
+    select: { status: true, school: { select: { slug: true } } },
+  });
+  if (!event) return { error: "Jadwal tidak ditemukan." };
+
+  try {
+    assertTransition(event.status, "DONE");
+  } catch {
+    return { error: "Jadwal ini tidak sedang dalam tahap rekap." };
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.psikotesEvent.update({ where: { id }, data: { status: "DONE" } }),
+      // updateMany (not update) — keyed on the open job, of which there should
+      // be exactly one; tolerate zero without throwing.
+      prisma.recapJob.updateMany({
+        where: { eventId: id, finishedAt: null },
+        data: { finishedAt: new Date() },
+      }),
+    ]);
+  } catch {
+    return { error: "Gagal menyelesaikan rekap. Coba lagi." };
   }
 
   revalidateEventPaths({ id, slug: event.school.slug });

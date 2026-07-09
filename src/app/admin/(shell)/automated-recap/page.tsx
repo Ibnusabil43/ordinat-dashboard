@@ -1,8 +1,14 @@
-export default function Page() {
+import { PageHeader } from "@/components/admin/PageHeader";
+import { RecapTool } from "@/components/admin/recap/RecapTool";
+
+export default function AutomatedRecapPage() {
   return (
-    <main className="p-6">
-      <h1 className="text-lg font-semibold text-zinc-900">Automated Recap</h1>
-      <p className="mt-1 text-sm text-zinc-500">TODO: kartu buka tool rekap (Flask)</p>
-    </main>
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
+      <PageHeader
+        title="Automated Recap"
+        description="Upload file RAW & Rekap — otomatis isi Score, identitas, format tanggal, dan tandai siswa tanpa data."
+      />
+      <RecapTool />
+    </div>
   );
 }

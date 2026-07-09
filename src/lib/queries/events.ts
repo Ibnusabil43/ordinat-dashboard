@@ -50,3 +50,28 @@ export async function getEventById(id: string) {
 }
 
 export type EventDetail = NonNullable<Awaited<ReturnType<typeof getEventById>>>;
+
+/**
+ * Events currently in REKAP, for the Rekap Menu (FE-I1). Ordered by when recap
+ * started (oldest first — those have been waiting longest). Carries the open
+ * recap job's startedAt so the UI can show "since when".
+ */
+export async function getRekapEvents() {
+  return prisma.psikotesEvent.findMany({
+    where: { status: "REKAP" },
+    orderBy: { updatedAt: "asc" },
+    select: {
+      id: true,
+      scheduledDate: true,
+      school: { select: { name: true, slug: true } },
+      recapJobs: {
+        where: { finishedAt: null },
+        orderBy: { startedAt: "desc" },
+        take: 1,
+        select: { startedAt: true, triggeredBy: true },
+      },
+    },
+  });
+}
+
+export type RekapEventItem = Awaited<ReturnType<typeof getRekapEvents>>[number];
