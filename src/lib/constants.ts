@@ -62,3 +62,9 @@ export function usernameToAuthEmail(username: string): string {
 export function authEmailToUsername(email: string): string {
   return email.split(`@${AUTH_EMAIL_DOMAIN}`)[0] ?? email;
 }
+
+/**
+ * How many days an event can sit in REKAP with an open recap job before it
+ * surfaces in Overview's "needs attention" list (BE-F2).
+ */
+export const REKAP_ATTENTION_THRESHOLD_DAYS = 3;
