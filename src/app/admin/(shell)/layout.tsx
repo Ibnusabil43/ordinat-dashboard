@@ -7,9 +7,15 @@ import { authEmailToUsername } from "@/lib/constants";
  * /admin/login (that route lives outside this route group) — see DESIGN.md
  * §11 (login is a bare centered card, no sidebar chrome).
  *
- * middleware.ts already redirects unauthenticated requests before this
- * layout renders, so `user` here should never be null in practice — but we
- * don't force-unwrap it, since the sidebar footer just needs a display string.
+ * middleware.ts already redirects unauthenticated requests before this layout
+ * renders (that's the security gate), so the email here is used ONLY for the
+ * sidebar display name — not for any authorization decision.
+ *
+ * Perf: `getClaims()` verifies the JWT locally against the project's cached
+ * JWKS — no network round-trip on the happy path, unlike `getUser()` which
+ * calls the Auth server (~120ms) every time. Since this is display-only and
+ * middleware already validated the request, the local check is both correct
+ * and safe here. See CLAUDE.md > Auth model.
  */
 export default async function AdminShellLayout({
   children,
@@ -17,13 +23,12 @@ export default async function AdminShellLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const email = typeof data?.claims?.email === "string" ? data.claims.email : null;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-zinc-50 sm:flex-row">
-      <Sidebar username={user?.email ? authEmailToUsername(user.email) : ""} />
+      <Sidebar username={email ? authEmailToUsername(email) : ""} />
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   );
