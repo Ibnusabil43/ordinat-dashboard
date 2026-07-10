@@ -6,6 +6,7 @@ import { SummaryCard } from "@/components/admin/SummaryCard";
 import { EmptyState } from "@/components/EmptyState";
 import { formatDateID } from "@/lib/format";
 import { REKAP_ATTENTION_THRESHOLD_DAYS } from "@/lib/constants";
+import { STATUS_LABEL } from "@/lib/status";
 
 function daysSince(date: Date): number {
   const ms = Date.now() - date.getTime();
@@ -21,8 +22,8 @@ export default async function OverviewPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <SummaryCard icon={School} value={stats.totalSchools} label="Total Sekolah" />
-        <SummaryCard icon={CircleDot} value={stats.ongoingCount} label="Sedang Psikotes" />
-        <SummaryCard icon={RefreshCw} value={stats.rekapCount} label="Tahap Rekap" />
+        <SummaryCard icon={CircleDot} value={stats.ongoingCount} label={STATUS_LABEL.ONGOING} />
+        <SummaryCard icon={RefreshCw} value={stats.rekapCount} label={STATUS_LABEL.REKAP} />
         <SummaryCard icon={CheckCheck} value={stats.doneThisMonthCount} label="Selesai Bulan Ini" />
       </div>
 

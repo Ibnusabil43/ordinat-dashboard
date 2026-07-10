@@ -22,9 +22,9 @@ export default async function AdminShellLayout({
   } = await supabase.auth.getUser();
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50 sm:flex-row">
+    <div className="flex h-screen flex-col overflow-hidden bg-zinc-50 sm:flex-row">
       <Sidebar username={user?.email ? authEmailToUsername(user.email) : ""} />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   );
 }

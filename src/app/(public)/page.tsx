@@ -9,7 +9,7 @@ export default async function HomePage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Ordinat Dashboard</h1>
         <p className="mt-2 text-sm text-zinc-500">
-          Cek jadwal psikotes, link tes, dan progress pelaksanaan untuk sekolahmu.
+          Pantau jadwal psikotes, link tes, dan progress pelaksanaan tiap sekolah.
         </p>
       </div>
       <SchoolGrid schools={schools} />

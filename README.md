@@ -1,6 +1,6 @@
 # Ordinat Dashboard
 
-Dashboard for school psychotest sessions — schedule, per-subtest test links, and progress tracking. Public side is open; admin side requires login. Complements the `psikotes-automation` (Flask) score-recap tool.
+Dashboard for school psychotest sessions — schedule, per-subtest test links, and progress tracking. Public side is open; admin side requires login. Complements the `recap-fuzzy-score-matcher` (Flask) score-recap tool.
 
 - **PRD:** [docs/PRD.md](docs/PRD.md)
 - **Coding & architecture guide:** [CLAUDE.md](CLAUDE.md)
@@ -28,7 +28,7 @@ Then create the first admin account in **Supabase Studio > Authentication > Add 
 
 - `/` and `/sekolah/[slug]` — public.
 - `/admin/*` — admin (protected by middleware; login at `/admin/login`).
-- `psikotes-automation` (separate sibling folder) — Flask recap tool, linked from `/admin/automated-recap`.
+- `recap-fuzzy-score-matcher` (separate sibling folder) — Flask recap tool, linked from `/admin/automated-recap`.
 
 ## Event status flow
 
