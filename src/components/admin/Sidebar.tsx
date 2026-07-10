@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -32,6 +33,15 @@ export function Sidebar({ username }: { username: string }) {
 
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+
+  const wordmark = (
+    <span className="flex min-w-0 items-center gap-2">
+      <Image src="/logo.png" alt="" width={24} height={24} className="shrink-0" />
+      <span className="truncate text-lg font-bold tracking-tight text-zinc-900">
+        Admin Dashboard
+      </span>
+    </span>
+  );
 
   const nav = (
     <nav className="flex flex-1 flex-col gap-1 p-3">
@@ -74,7 +84,7 @@ export function Sidebar({ username }: { username: string }) {
       {/* Desktop */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-zinc-200 bg-white sm:flex">
         <div className="border-b border-zinc-200 px-4 py-4">
-          <span className="text-lg font-bold tracking-tight text-zinc-900">Admin Dashboard</span>
+          {wordmark}
         </div>
         {nav}
         {footer}
@@ -82,7 +92,7 @@ export function Sidebar({ username }: { username: string }) {
 
       {/* Mobile top bar */}
       <div className="flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 sm:hidden">
-        <span className="text-lg font-bold tracking-tight text-zinc-900">Admin Dashboard</span>
+        {wordmark}
         <button
           type="button"
           aria-label="Buka menu"
@@ -103,7 +113,7 @@ export function Sidebar({ username }: { username: string }) {
           />
           <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-white shadow-lg">
             <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-4">
-              <span className="text-lg font-bold tracking-tight text-zinc-900">Admin Dashboard</span>
+              {wordmark}
               <button
                 type="button"
                 aria-label="Tutup menu"

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 /**
@@ -15,7 +16,8 @@ export default function PublicLayout({
     <div className="flex min-h-screen flex-col bg-zinc-50">
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-lg font-bold tracking-tight text-zinc-900">
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight text-zinc-900">
+            <Image src="/logo.png" alt="" width={24} height={24} className="shrink-0" />
             Ordinat
           </Link>
           <Link
