@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema } from "@/lib/validations";
 import { usernameToAuthEmail } from "@/lib/constants";
+import { roleFromAppMetadata } from "@/lib/roles";
 
 export async function signIn(
   _prevState: { error?: string } | undefined,
@@ -23,12 +24,20 @@ export async function signIn(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: usernameToAuthEmail(parsed.data.username),
     password: parsed.data.password,
   });
   if (error) {
     return { error: "Username atau password salah." };
+  }
+
+  // TESTER can only ever land on Monitoring (BE-H4) — honoring a ?next=
+  // pointing anywhere else would just bounce them right back via
+  // middleware.ts, so skip that round-trip and send them straight there.
+  const role = roleFromAppMetadata(data.user.app_metadata);
+  if (role === "TESTER") {
+    redirect("/admin/monitoring");
   }
 
   // Honor middleware's ?next= redirect target, but only if it's an internal
