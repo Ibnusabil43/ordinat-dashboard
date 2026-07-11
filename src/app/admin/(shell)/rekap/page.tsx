@@ -1,11 +1,16 @@
+import { redirect } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 import { getRekapEvents } from "@/lib/queries/events";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { MarkResumeButton } from "@/components/admin/MarkResumeButton";
 import { formatDateID } from "@/lib/format";
+import { getCurrentRole } from "@/lib/auth-guard";
 
+/** ADMIN-only page (BE-H2) — PIC_LAPANGAN's Sidebar hides the link, but a direct URL must still bounce. */
 export default async function RekapMenuPage() {
+  if ((await getCurrentRole()) !== "ADMIN") redirect("/admin");
+
   const events = await getRekapEvents();
 
   return (

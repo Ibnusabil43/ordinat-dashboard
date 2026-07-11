@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const event = await prisma.psikotesEvent.findUnique({
     where: { id },
-    select: { status: true, school: { select: { slug: true } } },
+    select: { status: true },
   });
   if (!event) {
     return NextResponse.json({ error: "Jadwal tidak ditemukan." }, { status: 404 });
@@ -70,8 +70,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   revalidatePath("/admin/jadwal");
   revalidatePath(`/admin/jadwal/${id}`);
   revalidatePath("/admin");
-  revalidatePath("/");
-  revalidatePath(`/sekolah/${event.school.slug}`);
 
   return NextResponse.json({ status: "REKAP" }, { status: 200 });
 }

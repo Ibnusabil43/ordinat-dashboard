@@ -3,15 +3,16 @@
  * Streams the binary xlsx back — plain Response (not NextResponse) since this
  * is a passthrough, not a JSON API response.
  */
-import { getCurrentUser } from "@/lib/auth-guard";
+import { requireAdmin } from "@/lib/auth-guard";
 import { recapToolUrl, recapAuthHeader } from "@/lib/recap-proxy";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ filename: string }> },
 ) {
-  if (!(await getCurrentUser())) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireAdmin();
+  if ("error" in guard) {
+    return Response.json({ error: guard.error }, { status: 401 });
   }
   const { filename } = await params;
 

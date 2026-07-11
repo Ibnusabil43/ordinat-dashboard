@@ -12,25 +12,19 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { eventSchema } from "@/lib/validations";
 import { assertTransition } from "@/lib/status";
-import { getCurrentUser, SESSION_EXPIRED_ERROR } from "@/lib/auth-guard";
+import { requireStaff, requireAdmin } from "@/lib/auth-guard";
 
 export interface EventActionState {
   error?: string;
   fieldErrors?: { schoolId?: string; scheduledDate?: string };
 }
 
-/**
- * Revalidate everything an event change can touch: the admin list, the admin
- * detail, the admin overview counts, the public home, and — when we know it —
- * the public school detail page.
- */
-function revalidateEventPaths(opts: { id?: string; slug?: string } = {}) {
+/** Revalidate everything an event change can touch: the admin list, detail, and overview counts. */
+function revalidateEventPaths(opts: { id?: string } = {}) {
   revalidatePath("/admin/jadwal");
   revalidatePath("/admin/rekap");
   revalidatePath("/admin");
-  revalidatePath("/");
   if (opts.id) revalidatePath(`/admin/jadwal/${opts.id}`);
-  if (opts.slug) revalidatePath(`/sekolah/${opts.slug}`);
 }
 
 function parseEvent(formData: FormData) {
@@ -50,7 +44,8 @@ export async function createEvent(
   _prevState: EventActionState | undefined,
   formData: FormData,
 ): Promise<EventActionState> {
-  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+  const guard = await requireStaff();
+  if ("error" in guard) return { error: guard.error };
 
   const parsed = parseEvent(formData);
   if (!parsed.success) return fieldErrorsFrom(parsed);
@@ -71,19 +66,16 @@ export async function updateEvent(
   _prevState: EventActionState | undefined,
   formData: FormData,
 ): Promise<EventActionState> {
-  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+  const guard = await requireStaff();
+  if ("error" in guard) return { error: guard.error };
 
   const parsed = parseEvent(formData);
   if (!parsed.success) return fieldErrorsFrom(parsed);
 
   try {
     // Only schoolId + scheduledDate change here; status is untouched.
-    const updated = await prisma.psikotesEvent.update({
-      where: { id },
-      data: parsed.data,
-      select: { school: { select: { slug: true } } },
-    });
-    revalidateEventPaths({ id, slug: updated.school.slug });
+    await prisma.psikotesEvent.update({ where: { id }, data: parsed.data });
+    revalidateEventPaths({ id });
   } catch {
     return { error: "Gagal memperbarui jadwal. Coba lagi." };
   }
@@ -96,11 +88,12 @@ export async function updateEvent(
  * (markResume handles REKAP → DONE in Phase 7). Guarded by assertTransition.
  */
 export async function advanceToOngoing(id: string): Promise<{ error?: string }> {
-  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+  const guard = await requireStaff();
+  if ("error" in guard) return { error: guard.error };
 
   const event = await prisma.psikotesEvent.findUnique({
     where: { id },
-    select: { status: true, school: { select: { slug: true } } },
+    select: { status: true },
   });
   if (!event) return { error: "Jadwal tidak ditemukan." };
 
@@ -116,7 +109,7 @@ export async function advanceToOngoing(id: string): Promise<{ error?: string }> 
     return { error: "Gagal mengubah status. Coba lagi." };
   }
 
-  revalidateEventPaths({ id, slug: event.school.slug });
+  revalidateEventPaths({ id });
   return {};
 }
 
@@ -127,11 +120,12 @@ export async function advanceToOngoing(id: string): Promise<{ error?: string }> 
  * records when recap actually finished.
  */
 export async function markResume(id: string): Promise<{ error?: string }> {
-  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+  const guard = await requireAdmin();
+  if ("error" in guard) return { error: guard.error };
 
   const event = await prisma.psikotesEvent.findUnique({
     where: { id },
-    select: { status: true, school: { select: { slug: true } } },
+    select: { status: true },
   });
   if (!event) return { error: "Jadwal tidak ditemukan." };
 
@@ -155,6 +149,6 @@ export async function markResume(id: string): Promise<{ error?: string }> {
     return { error: "Gagal menyelesaikan rekap. Coba lagi." };
   }
 
-  revalidateEventPaths({ id, slug: event.school.slug });
+  revalidateEventPaths({ id });
   return {};
 }

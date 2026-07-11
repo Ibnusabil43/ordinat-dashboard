@@ -2,16 +2,16 @@
 
 /**
  * School CRUD (BE-B1–B3). Every action:
- *  1. checks the session (getCurrentUser) — middleware is only the first layer,
+ *  1. checks the session and role (requireStaff) — middleware is only the first layer,
  *  2. validates input with schoolSchema before touching Prisma,
- *  3. revalidates every path whose data changed (admin list + public home).
+ *  3. revalidates every path whose data changed.
  * See CLAUDE.md > Coding conventions.
  */
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { schoolSchema } from "@/lib/validations";
-import { getCurrentUser, SESSION_EXPIRED_ERROR } from "@/lib/auth-guard";
+import { requireStaff } from "@/lib/auth-guard";
 
 export interface SchoolActionState {
   error?: string;
@@ -28,14 +28,14 @@ function isDuplicateSlug(e: unknown): boolean {
 
 function revalidateSchoolPaths() {
   revalidatePath("/admin/sekolah");
-  revalidatePath("/"); // public home lists schools too
 }
 
 export async function createSchool(
   _prevState: SchoolActionState | undefined,
   formData: FormData,
 ): Promise<SchoolActionState> {
-  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+  const guard = await requireStaff();
+  if ("error" in guard) return { error: guard.error };
 
   const parsed = schoolSchema.safeParse({
     name: formData.get("name"),
@@ -62,7 +62,8 @@ export async function updateSchool(
   _prevState: SchoolActionState | undefined,
   formData: FormData,
 ): Promise<SchoolActionState> {
-  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+  const guard = await requireStaff();
+  if ("error" in guard) return { error: guard.error };
 
   const parsed = schoolSchema.safeParse({
     name: formData.get("name"),
@@ -92,7 +93,8 @@ export async function updateSchool(
  * warn about that cascade before calling this.
  */
 export async function deleteSchool(id: string): Promise<{ error?: string }> {
-  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+  const guard = await requireStaff();
+  if ("error" in guard) return { error: guard.error };
 
   try {
     await prisma.school.delete({ where: { id } });
