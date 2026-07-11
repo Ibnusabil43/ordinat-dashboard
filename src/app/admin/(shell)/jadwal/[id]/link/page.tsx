@@ -1,17 +1,21 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getEventById } from "@/lib/queries/events";
 import { upsertSubtestLinks } from "@/server/actions/links";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { LinkForm } from "@/components/admin/LinkForm";
 import { formatDateID } from "@/lib/format";
+import { getCurrentRole } from "@/lib/auth-guard";
 
+/** ADMIN-only page (BE-H2) — PIC_LAPANGAN's Sidebar hides the link, but a direct URL must still bounce. */
 export default async function LinkManagementPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  if ((await getCurrentRole()) !== "ADMIN") redirect("/admin");
+
   const { id } = await params;
   const event = await getEventById(id);
   if (!event) notFound();

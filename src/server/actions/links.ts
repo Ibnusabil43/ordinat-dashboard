@@ -10,7 +10,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { subtestLinksSchema } from "@/lib/validations";
 import { SUBTEST_CODES } from "@/lib/constants";
-import { getCurrentUser, SESSION_EXPIRED_ERROR } from "@/lib/auth-guard";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export interface LinksActionState {
   error?: string;
@@ -24,7 +24,8 @@ export async function upsertSubtestLinks(
   _prevState: LinksActionState | undefined,
   formData: FormData,
 ): Promise<LinksActionState> {
-  if (!(await getCurrentUser())) return { error: SESSION_EXPIRED_ERROR };
+  const guard = await requireAdmin();
+  if ("error" in guard) return { error: guard.error };
 
   const links = SUBTEST_CODES.map((code) => ({
     code,
@@ -49,7 +50,6 @@ export async function upsertSubtestLinks(
   const subtestTypes = await prisma.subtestType.findMany({ select: { id: true, code: true } });
   const idByCode = new Map(subtestTypes.map((s) => [s.code, s.id]));
 
-  let schoolSlug: string | null = null;
   try {
     await prisma.$transaction(async (tx) => {
       for (const link of parsed.data.links) {
@@ -66,12 +66,6 @@ export async function upsertSubtestLinks(
           update: { url: link.url },
         });
       }
-
-      const event = await tx.psikotesEvent.findUniqueOrThrow({
-        where: { id: eventId },
-        select: { school: { select: { slug: true } } },
-      });
-      schoolSlug = event.school.slug;
     });
   } catch {
     return { error: "Gagal menyimpan link. Coba lagi." };
@@ -80,8 +74,6 @@ export async function upsertSubtestLinks(
   revalidatePath(`/admin/jadwal/${eventId}/link`);
   revalidatePath(`/admin/jadwal/${eventId}`);
   revalidatePath("/admin/jadwal");
-  if (schoolSlug) revalidatePath(`/sekolah/${schoolSlug}`);
-  revalidatePath("/"); // home cards show link count too
 
   return { success: true };
 }
