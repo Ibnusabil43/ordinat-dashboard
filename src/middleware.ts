@@ -82,5 +82,10 @@ export const config = {
   // break the integration), and /api/admin/* already self-gates via
   // getCurrentUser()/requireStaff() with a 401 JSON response, which callers
   // expect instead of a redirect. See CLAUDE.md > Integration contract with Flask.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon.png).*)"],
+  //
+  // logo.png is exempted alongside icon.png/favicon.ico (Phase 11) — the
+  // login page renders it while logged out, and Next's image optimizer
+  // fetches the source from this same origin, so redirecting the request
+  // to /admin/login instead of serving it broke the image entirely.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon.png|logo.png).*)"],
 };
