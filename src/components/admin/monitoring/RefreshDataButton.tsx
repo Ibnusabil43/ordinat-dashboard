@@ -20,10 +20,15 @@ export function RefreshDataButton() {
       type="button"
       onClick={() => startTransition(() => router.refresh())}
       disabled={pending}
-      className="flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+      className={clsx(
+        "flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-medium transition",
+        pending
+          ? "cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-400"
+          : "cursor-pointer border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50",
+      )}
     >
       <RefreshCw aria-hidden="true" size={14} className={clsx(pending && "animate-spin")} />
-      Refresh Data
+      {pending ? "Refreshing..." : "Refresh Data"}
     </button>
   );
 }
