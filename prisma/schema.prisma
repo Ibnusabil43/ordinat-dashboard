@@ -71,16 +71,21 @@ model SubtestType {
 }
 
 model PsikotesEvent {
-  id            String        @id @default(cuid())
-  schoolId      String
-  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  scheduledDate DateTime
-  status        EventStatus   @default(SCHEDULED)
-  links         SubtestLink[]
-  recapJobs     RecapJob[]
-  createdById   String? // auth.users.id (Supabase) of the admin who created this event — no FK, cross-schema
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  schoolId          String
+  school            School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  scheduledDate     DateTime
+  status            EventStatus   @default(SCHEDULED)
+  links             SubtestLink[]
+  recapJobs         RecapJob[]
+  createdById       String? // auth.users.id (Supabase) of the admin who created this event — no FK, cross-schema
+  // Drive file ID of the uploaded recap result (FR-16). Presence means
+  // "we've uploaded before" — the next upload updates this file in place
+  // (same ID, new content) instead of creating a duplicate. Nullable;
+  // absence just means no result uploaded yet, not an error state.
+  driveResultFileId String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([schoolId])
   @@index([status])

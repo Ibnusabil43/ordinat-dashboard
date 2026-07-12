@@ -1,27 +1,31 @@
 "use client";
 
 import { formatDateID } from "@/lib/format";
-import type { OngoingEventOption } from "@/lib/queries/events";
+import { STATUS_LABEL } from "@/lib/status";
+import type { RecapPickerEventOption } from "@/lib/queries/events";
 
 /**
- * Dropdown of ONGOING events (FE-N1), rendered above UploadForm inside
- * RecapTool. Empty state when there's nothing to pick — the rest of the
- * form stays disabled in that case too (RecapTool ties formDisabled to
- * "no event selected", which is permanently true here).
+ * Dropdown of ONGOING/REKAP/DONE events (FE-N1, revised), rendered above
+ * UploadForm inside RecapTool. REKAP/DONE entries are labeled so it's clear
+ * they're a re-run, not a first pass — but they're still selectable, since
+ * re-recapping an already-processed school must not be locked out. Empty
+ * state when there's nothing to pick — the rest of the form stays disabled
+ * in that case too (RecapTool ties formDisabled to "no event selected",
+ * which is permanently true here).
  */
 export function EventPicker({
   events,
   value,
   onChange,
 }: {
-  events: OngoingEventOption[];
+  events: RecapPickerEventOption[];
   value: string;
   onChange: (eventId: string) => void;
 }) {
   if (events.length === 0) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-500 sm:p-6">
-        Tidak ada sekolah yang sedang psikotes saat ini.
+        Belum ada sekolah yang sedang atau sudah psikotes.
       </div>
     );
   }
@@ -43,6 +47,7 @@ export function EventPicker({
         {events.map((e) => (
           <option key={e.id} value={e.id}>
             {e.school.name} — {formatDateID(e.scheduledDate)}
+            {e.status !== "ONGOING" ? ` (${STATUS_LABEL[e.status]} — ulang)` : ""}
           </option>
         ))}
       </select>

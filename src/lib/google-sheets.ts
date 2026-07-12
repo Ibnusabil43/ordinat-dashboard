@@ -1,25 +1,28 @@
 /**
- * Service-account-authenticated Google Sheets/Drive client (BE-L2, PRD FR-15).
- * Two unrelated jobs share this one file only because they share the same
- * auth setup:
+ * Google Sheets/Drive client (BE-L2, PRD FR-15). Two unrelated jobs share
+ * this one file, but — revised, Phase 15 — they now use two DIFFERENT auth
+ * mechanisms, not one shared service account:
  *  - listSheetTabs/readTabRows read a school's raw-data spreadsheet
- *    (School.driveRawSheetId) — one spreadsheet, 12 internal tabs.
+ *    (School.driveRawSheetId) — one spreadsheet, 12 internal tabs. Still the
+ *    service account (GOOGLE_SERVICE_ACCOUNT_EMAIL/_PRIVATE_KEY) — reading
+ *    only, no storage quota needed, works fine.
  *  - uploadOrUpdateFile writes a recap result into the one shared results
  *    folder (GOOGLE_DRIVE_RESULTS_FOLDER_ID, Phase 15) — NOT a per-school
- *    folder. Never pass a School's own ID as `folderId` here; there isn't one.
- *
- * Credentials: GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.
- * A Sheet/Folder is only reachable once explicitly shared with that email
- * (Viewer for a raw sheet, Editor for the results folder) — see CLAUDE.md.
+ *    folder. This is OAuth (GOOGLE_OAUTH_CLIENT_ID/_SECRET/_REFRESH_TOKEN),
+ *    not the service account: a bare service account has no Drive storage
+ *    quota of its own and cannot CREATE new files in a personal "My Drive"
+ *    folder (only inside a Shared Drive, which needs paid Workspace) — it
+ *    can read shared content fine, just not write new files. So writes
+ *    authenticate as the folder's actual owner via OAuth instead. See
+ *    scripts/google-oauth-setup.mjs for the one-time authorization runbook.
  */
 import { Readable } from "node:stream";
 import { google } from "googleapis";
 import { SUBTEST_TYPES } from "@/lib/constants";
 
 const SHEETS_READONLY_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
-function getAuth() {
+function getServiceAccountAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const rawKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
   if (!email || !rawKey) {
@@ -31,16 +34,30 @@ function getAuth() {
   return new google.auth.JWT({
     email,
     key: rawKey.replace(/\\n/g, "\n"),
-    scopes: [SHEETS_READONLY_SCOPE, DRIVE_SCOPE],
+    scopes: [SHEETS_READONLY_SCOPE],
   });
 }
 
+function getOAuthAuth() {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error(
+      "GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET / GOOGLE_OAUTH_REFRESH_TOKEN belum diatur di .env — jalankan scripts/google-oauth-setup.mjs.",
+    );
+  }
+  const client = new google.auth.OAuth2(clientId, clientSecret);
+  client.setCredentials({ refresh_token: refreshToken });
+  return client;
+}
+
 function sheetsClient() {
-  return google.sheets({ version: "v4", auth: getAuth() });
+  return google.sheets({ version: "v4", auth: getServiceAccountAuth() });
 }
 
 function driveClient() {
-  return google.drive({ version: "v3", auth: getAuth() });
+  return google.drive({ version: "v3", auth: getOAuthAuth() });
 }
 
 /** Uppercase, non-alphanumeric run collapsed to a single break — "1. BIODATA & SE" -> ["1","BIODATA","SE"]. */
@@ -131,7 +148,15 @@ export async function uploadOrUpdateFile(
   };
 
   if (existingFileId) {
-    const res = await drive.files.update({ fileId: existingFileId, media, fields: "id" });
+    // requestBody.name too, not just media — otherwise a re-run under a
+    // changed naming scheme (or corrected school name) silently keeps
+    // whatever name the file got on its first upload.
+    const res = await drive.files.update({
+      fileId: existingFileId,
+      requestBody: { name: filename },
+      media,
+      fields: "id",
+    });
     if (!res.data.id) throw new Error("Drive tidak mengembalikan file ID setelah update.");
     return res.data.id;
   }
