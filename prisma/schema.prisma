@@ -20,19 +20,25 @@ datasource db {
 
 enum EventStatus {
   SCHEDULED // Terjadwal
-  ONGOING   // Sedang Psikotes
-  REKAP     // Tahap Rekap
-  DONE      // Tahap Resume
+  ONGOING // Sedang Psikotes
+  REKAP // Tahap Rekap
+  DONE // Tahap Resume
 }
 
 model School {
-  id        String          @id @default(cuid())
-  name      String // "SMAN 1 CIWARINGIN"
-  slug      String          @unique // "CIWARINGIN26" — used in the tiny.cc URL pattern
-  events    PsikotesEvent[]
-  kelas     Kelas[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id              String          @id @default(cuid())
+  name            String // "SMAN 1 CIWARINGIN"
+  slug            String          @unique // "CIWARINGIN26" — used in the tiny.cc URL pattern
+  // One Google Sheets spreadsheet ID, 12 internal tabs (one per subtest,
+  // mirrors Flask's RAW workbook shape) — read-only, used by Monitoring
+  // (FR-11/FR-15). NOT a folder — there is no per-school Drive folder;
+  // recap results all go to one shared folder (GOOGLE_DRIVE_RESULTS_FOLDER_ID
+  // env var), distinguished by filename instead. See CLAUDE.md > Domain.
+  driveRawSheetId String?
+  events          PsikotesEvent[]
+  kelas           Kelas[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([name])
 }

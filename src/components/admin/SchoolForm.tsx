@@ -39,7 +39,7 @@ export function SchoolForm({
   submitLabel,
 }: {
   action: Action;
-  initial?: { name: string; slug: string };
+  initial?: { name: string; slug: string; driveRawSheetId?: string | null };
   submitLabel: string;
 }) {
   const router = useRouter();
@@ -131,6 +131,26 @@ export function SchoolForm({
           </p>
         </div>
       )}
+
+      {/* Persisted School column (BE-L1) — editable on both create and edit,
+          unlike Jumlah Kelas above (a one-time bulk-create shortcut, not a field). */}
+      <div>
+        <label htmlFor="driveRawSheetId" className="mb-1.5 block text-sm font-medium text-zinc-900">
+          Drive Raw Sheet ID <span className="font-normal text-zinc-400">(opsional)</span>
+        </label>
+        <input
+          id="driveRawSheetId"
+          name="driveRawSheetId"
+          type="text"
+          defaultValue={initial?.driveRawSheetId ?? ""}
+          placeholder="1E7P6Cj0Hr3dD3fTOK3VFGz85xN6GH-PTd2oacFMQe94"
+          className={`${inputClass(false)} font-mono`}
+        />
+        <p className="mt-1 text-xs text-zinc-500">
+          ID spreadsheet Google Sheets RAW sekolah ini (12 tab, satu per subtes) — dipakai Monitoring.
+          Salin dari URL spreadsheet-nya, bagian setelah <span className="font-mono">/d/</span>.
+        </p>
+      </div>
 
       {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
 
