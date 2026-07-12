@@ -1,23 +1,58 @@
-import { Activity } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, School } from "lucide-react";
+import { getSchoolsForMonitoring, type SchoolForMonitoring } from "@/lib/queries/monitoring";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 
 /**
- * Placeholder — the real infographic + Cek Nama tool is Phase 14 (BE-M,
- * FE-P). This page exists in Phase 10 purely so TESTER's redirect target
- * (middleware.ts, BE-H4) resolves to something instead of a 404.
+ * School list (FE-P1) — same DataTable treatment as Manajemen Sekolah/Jadwal
+ * (desktop table, mobile card-stack), not a card grid (revised after review
+ * — a plain list reads faster than cards for a pure navigation list). All 3
+ * roles reach this, including TESTER, per PRD FR-11. Each row links to the
+ * per-school dashboard at /admin/monitoring/[schoolId].
  */
-export default function MonitoringPage() {
+export default async function MonitoringPage() {
+  const schools = await getSchoolsForMonitoring();
+
+  const columns: DataTableColumn<SchoolForMonitoring>[] = [
+    {
+      key: "name",
+      header: "Sekolah",
+      render: (s) => <span className="font-medium text-zinc-900">{s.name}</span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (s) =>
+        s.driveRawSheetId ? null : <span className="text-xs text-zinc-400">Sheet RAW belum diatur</span>,
+    },
+    {
+      key: "actions",
+      header: "Aksi",
+      className: "text-right",
+      render: (s) => (
+        <Link
+          href={`/admin/monitoring/${s.id}`}
+          aria-label={`Lihat monitoring ${s.name}`}
+          className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 transition hover:text-zinc-500"
+        >
+          Detail
+          <ChevronRight aria-hidden="true" size={16} />
+        </Link>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
-        title="Monitoring"
-        description="Ringkasan submisi psikotes per sekolah."
-      />
-      <EmptyState
-        icon={Activity}
-        title="Belum tersedia"
-        description="Dashboard monitoring sedang dibangun."
+      <PageHeader title="Monitoring" description="Pilih sekolah untuk lihat ringkasan submisi psikotes." />
+
+      <DataTable
+        columns={columns}
+        data={schools}
+        getRowKey={(s) => s.id}
+        emptyState={<EmptyState icon={School} title="Belum ada sekolah terdaftar" />}
       />
     </div>
   );

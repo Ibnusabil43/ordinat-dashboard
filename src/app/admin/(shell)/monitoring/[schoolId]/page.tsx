@@ -1,0 +1,125 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { getSchoolById } from "@/lib/queries/schools";
+import { getSubmissionSummary, getLatestEventLinks } from "@/lib/queries/monitoring";
+import { PageHeader } from "@/components/admin/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
+import { SubmissionSummary } from "@/components/admin/monitoring/SubmissionSummary";
+import { NameCheck } from "@/components/admin/monitoring/NameCheck";
+import { Tabs } from "@/components/Tabs";
+import { LinkTable, type LinkRow } from "@/components/LinkTable";
+import { CopyLinksButton } from "@/components/CopyLinksButton";
+import { SUBTEST_TYPES } from "@/lib/constants";
+import { buildLinkCopyText } from "@/lib/format";
+
+/**
+ * Per-school dashboard (FE-P1's second route). Two distinct empty/error
+ * states (FE-P4): "driveRawSheetId not set" is a simple upfront check, vs.
+ * "Sheets fetch failed" which only surfaces once getSubmissionSummary
+ * actually tries and throws — different problems, different messages.
+ *
+ * "Link" + "Cek Nama" tabs below the summary — TESTER can't reach Event
+ * Detail (ADMIN/PIC_LAPANGAN only), so the Link tab is this role's only way
+ * to see subtest links at all. Deliberately independent of driveRawSheetId
+ * — a school missing its raw sheet shouldn't also lose link visibility,
+ * the two features don't depend on each other.
+ */
+export default async function SchoolMonitoringPage({
+  params,
+}: {
+  params: Promise<{ schoolId: string }>;
+}) {
+  const { schoolId } = await params;
+  const school = await getSchoolById(schoolId);
+  if (!school) notFound();
+
+  const eventLinks = await getLatestEventLinks(school.id);
+  const linkRows: LinkRow[] = SUBTEST_TYPES.map((s) => ({
+    code: s.code,
+    label: s.label,
+    url: eventLinks.find((l) => l.subtestType.code === s.code)?.url ?? null,
+  }));
+
+  return (
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
+      <Link
+        href="/admin/monitoring"
+        className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
+      >
+        <ArrowLeft aria-hidden="true" size={16} />
+        Kembali
+      </Link>
+
+      <PageHeader title={school.name} description="Ringkasan submisi psikotes." />
+
+      {!school.driveRawSheetId ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title="Sheet RAW belum diatur"
+          description={`Atur Drive Raw Sheet ID untuk ${school.name} di halaman Manajemen Sekolah agar data submisi bisa dipantau di sini.`}
+        />
+      ) : (
+        <SummarySection schoolId={school.id} />
+      )}
+
+      <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
+        <Tabs
+          tabs={[
+            {
+              key: "link",
+              label: "Link",
+              content: (
+                <div className="flex flex-col gap-4">
+                  <div className="flex justify-end">
+                    <CopyLinksButton
+                      text={buildLinkCopyText(
+                        school.name,
+                        linkRows.map((r) => ({ label: r.label, url: r.url ?? "" })),
+                      )}
+                    />
+                  </div>
+                  <LinkTable rows={linkRows} />
+                </div>
+              ),
+            },
+            {
+              key: "cek-nama",
+              label: "Cek Nama",
+              content: school.driveRawSheetId ? (
+                <NameCheck schoolId={school.id} />
+              ) : (
+                <EmptyState
+                  icon={AlertTriangle}
+                  title="Sheet RAW belum diatur"
+                  description="Cek Nama butuh Drive Raw Sheet ID — atur di halaman Manajemen Sekolah."
+                  className="py-6"
+                />
+              ),
+            },
+          ]}
+        />
+      </div>
+    </div>
+  );
+}
+
+async function SummarySection({ schoolId }: { schoolId: string }) {
+  let counts;
+  try {
+    counts = await getSubmissionSummary(schoolId);
+  } catch {
+    return (
+      <EmptyState
+        icon={AlertTriangle}
+        title="Gagal memuat data"
+        description="Sheet RAW tidak bisa diakses — cek apakah sudah dibagikan ke service account, atau coba lagi."
+      />
+    );
+  }
+
+  // counts is only null when driveRawSheetId isn't set — already checked by the caller, so this is unreachable in practice.
+  if (!counts) return null;
+
+  return <SubmissionSummary counts={counts} />;
+}
