@@ -8,23 +8,15 @@
  * rejected server-side even if a stale UI offered the button.
  * See CLAUDE.md > Domain and Coding conventions.
  */
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { eventSchema } from "@/lib/validations";
 import { assertTransition } from "@/lib/status";
 import { requireStaff, requireAdmin } from "@/lib/auth-guard";
+import { revalidateEventPaths } from "@/lib/event-paths";
 
 export interface EventActionState {
   error?: string;
   fieldErrors?: { schoolId?: string; scheduledDate?: string };
-}
-
-/** Revalidate everything an event change can touch: the admin list, detail, and overview counts. */
-function revalidateEventPaths(opts: { id?: string } = {}) {
-  revalidatePath("/admin/jadwal");
-  revalidatePath("/admin/rekap");
-  revalidatePath("/admin");
-  if (opts.id) revalidatePath(`/admin/jadwal/${opts.id}`);
 }
 
 function parseEvent(formData: FormData) {
