@@ -46,17 +46,18 @@ export async function createSchool(
     name: formData.get("name"),
     slug: formData.get("slug"),
     kelasCount: formData.get("kelasCount") || undefined,
+    driveRawSheetId: formData.get("driveRawSheetId") ?? undefined,
   });
   if (!parsed.success) {
     const f = parsed.error.flatten().fieldErrors;
     return { fieldErrors: { name: f.name?.[0], slug: f.slug?.[0] } };
   }
 
-  const { name, slug, kelasCount } = parsed.data;
+  const { name, slug, kelasCount, driveRawSheetId } = parsed.data;
 
   try {
     await prisma.$transaction(async (tx) => {
-      const school = await tx.school.create({ data: { name, slug } });
+      const school = await tx.school.create({ data: { name, slug, driveRawSheetId } });
       if (kelasCount && kelasCount > 0) {
         await tx.kelas.createMany({
           data: Array.from({ length: kelasCount }, (_, i) => ({
@@ -87,6 +88,7 @@ export async function updateSchool(
   const parsed = schoolSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
+    driveRawSheetId: formData.get("driveRawSheetId") ?? undefined,
   });
   if (!parsed.success) {
     const f = parsed.error.flatten().fieldErrors;
@@ -96,7 +98,14 @@ export async function updateSchool(
   try {
     // Prisma's unique constraint already excludes "no change" (a row keeps its
     // own slug), so a P2002 here genuinely means another school owns that slug.
-    await prisma.school.update({ where: { id }, data: { name: parsed.data.name, slug: parsed.data.slug } });
+    await prisma.school.update({
+      where: { id },
+      data: {
+        name: parsed.data.name,
+        slug: parsed.data.slug,
+        driveRawSheetId: parsed.data.driveRawSheetId,
+      },
+    });
   } catch (e) {
     if (isDuplicateSlug(e)) return { fieldErrors: { slug: DUPLICATE_SLUG_ERROR } };
     return { error: "Gagal memperbarui sekolah. Coba lagi." };

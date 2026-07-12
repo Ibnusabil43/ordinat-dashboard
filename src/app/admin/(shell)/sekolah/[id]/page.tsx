@@ -39,7 +39,7 @@ export default async function EditSchoolPage({
       />
       <SchoolForm
         action={updateSchool.bind(null, school.id)}
-        initial={{ name: school.name, slug: school.slug }}
+        initial={{ name: school.name, slug: school.slug, driveRawSheetId: school.driveRawSheetId }}
         submitLabel="Simpan Perubahan"
       />
     </div>
