@@ -86,3 +86,23 @@ export async function getRekapEvents() {
 }
 
 export type RekapEventItem = Awaited<ReturnType<typeof getRekapEvents>>[number];
+
+/**
+ * ONGOING events for a picker (BE-J3) — these are the ones eligible to
+ * enter REKAP. Shared by the internal webhook's event-listing route
+ * (BE-E2, Flask's own picker) and Automated Recap's admin-session
+ * `EventPicker` (FE-N1), so the two never drift into listing different sets.
+ */
+export async function getOngoingEventsForPicker() {
+  return prisma.psikotesEvent.findMany({
+    where: { status: "ONGOING" },
+    orderBy: { scheduledDate: "desc" },
+    select: {
+      id: true,
+      scheduledDate: true,
+      school: { select: { name: true, slug: true } },
+    },
+  });
+}
+
+export type OngoingEventOption = Awaited<ReturnType<typeof getOngoingEventsForPicker>>[number];

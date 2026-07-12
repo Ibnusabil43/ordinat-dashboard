@@ -9,8 +9,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { assertTransition } from "@/lib/status";
+import { startRekap } from "@/lib/recap-status";
 import { isValidRecapToken } from "@/lib/recap-auth";
 
 // This endpoint only ever drives ONGOING → REKAP, so status is a literal.
@@ -38,32 +37,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Body harus { "status": "REKAP" }.' }, { status: 400 });
   }
 
-  const event = await prisma.psikotesEvent.findUnique({
-    where: { id },
-    select: { status: true },
-  });
-  if (!event) {
-    return NextResponse.json({ error: "Jadwal tidak ditemukan." }, { status: 404 });
-  }
-
-  try {
-    assertTransition(event.status, "REKAP");
-  } catch {
-    return NextResponse.json(
-      { error: `Transisi tidak sah dari status ${event.status} ke REKAP.` },
-      { status: 409 },
-    );
-  }
-
-  try {
-    await prisma.$transaction([
-      prisma.psikotesEvent.update({ where: { id }, data: { status: "REKAP" } }),
-      prisma.recapJob.create({
-        data: { eventId: id, triggeredBy: parsed.data.triggeredBy ?? "Automated Recap" },
-      }),
-    ]);
-  } catch {
-    return NextResponse.json({ error: "Gagal memperbarui status." }, { status: 500 });
+  const result = await startRekap(id, parsed.data.triggeredBy ?? "Automated Recap");
+  if (!result.ok) {
+    const status = result.reason === "not_found" ? 404 : result.reason === "invalid_transition" ? 409 : 500;
+    return NextResponse.json({ error: result.message }, { status });
   }
 
   revalidatePath("/admin/rekap");

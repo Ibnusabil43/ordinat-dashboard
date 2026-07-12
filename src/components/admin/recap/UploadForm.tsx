@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Play } from "lucide-react";
+import { clsx } from "clsx";
 import { FileDropzone } from "@/components/admin/recap/FileDropzone";
 
 interface UploadFormProps {
@@ -20,6 +21,8 @@ interface UploadFormProps {
   onSubmit: () => void;
   disabled: boolean;
   processing: boolean;
+  /** FE-N1 — no event picked yet means nothing for Tanggal Pemeriksaan/Pendidikan to default from, so the whole form is locked until one is. */
+  formDisabled?: boolean;
 }
 
 const inputClass =
@@ -41,11 +44,15 @@ export function UploadForm({
   onSubmit,
   disabled,
   processing,
+  formDisabled = false,
 }: UploadFormProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   return (
-    <div className="flex flex-col gap-6">
+    <fieldset
+      disabled={formDisabled}
+      className={clsx("m-0 flex flex-col gap-6 border-0 p-0", formDisabled && "opacity-50")}
+    >
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
         <h2 className="text-lg font-semibold text-zinc-900">Upload File</h2>
         <p className="mt-1 text-sm text-zinc-500">Rekap = sumber kebenaran nama &amp; kelas.</p>
@@ -140,6 +147,6 @@ export function UploadForm({
         <Play aria-hidden="true" size={16} />
         {processing ? "Memproses..." : "Proses Otomatis"}
       </button>
-    </div>
+    </fieldset>
   );
 }
