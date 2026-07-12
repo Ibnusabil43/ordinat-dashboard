@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { EVENT_STATUSES, type EventStatus } from "@/lib/status";
+import { getOngoingEventsForPicker } from "@/lib/queries/events";
 import { isValidRecapToken } from "@/lib/recap-auth";
 
 export async function GET(request: Request) {
@@ -19,15 +20,21 @@ export async function GET(request: Request) {
     ? (statusParam as EventStatus)
     : "ONGOING";
 
-  const events = await prisma.psikotesEvent.findMany({
-    where: { status },
-    orderBy: { scheduledDate: "desc" },
-    select: {
-      id: true,
-      scheduledDate: true,
-      school: { select: { name: true, slug: true } },
-    },
-  });
+  // ONGOING (the common case) goes through the shared query (BE-J3), also
+  // used by Automated Recap's own EventPicker — any other explicit status
+  // is a niche Flask-only lookup, not worth its own shared function.
+  const events =
+    status === "ONGOING"
+      ? await getOngoingEventsForPicker()
+      : await prisma.psikotesEvent.findMany({
+          where: { status },
+          orderBy: { scheduledDate: "desc" },
+          select: {
+            id: true,
+            scheduledDate: true,
+            school: { select: { name: true, slug: true } },
+          },
+        });
 
   return NextResponse.json({
     status,

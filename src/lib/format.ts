@@ -18,6 +18,14 @@ export function toDateInputValue(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** "DD/MM/YYYY" — the free-text format Automated Recap's Tanggal Pemeriksaan field expects (FE-N2). */
+export function toDDMMYYYY(date: Date): string {
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const y = date.getUTCFullYear();
+  return `${d}/${m}/${y}`;
+}
+
 /**
  * Builds the "copy all links" plain-text block for the public school detail
  * page — see DESIGN.md §5 "Copy-all-links button" and PRD FR-2 for the exact

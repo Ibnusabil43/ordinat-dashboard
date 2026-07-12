@@ -4,7 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { UploadForm } from "@/components/admin/recap/UploadForm";
 import { ReviewTable } from "@/components/admin/recap/ReviewTable";
 import { ResultsSummary } from "@/components/admin/recap/ResultsSummary";
+import { EventPicker } from "@/components/admin/recap/EventPicker";
+import { triggerRekap } from "@/server/actions/recap";
+import { toDDMMYYYY } from "@/lib/format";
 import type { JobStatus } from "@/lib/recap-types";
+import type { OngoingEventOption } from "@/lib/queries/events";
 
 const TERMINAL_STATUSES = ["done", "error", "awaiting_review"];
 
@@ -12,8 +16,12 @@ const TERMINAL_STATUSES = ["done", "error", "awaiting_review"];
  * Full-parity port of the original Flask tool's UI (templates/index.html.bak
  * in psikotes-automation), restyled monochrome. Talks only to our own
  * /api/admin/recap/* proxy routes — never to Flask directly.
+ *
+ * `events` (FE-N1) are the ONGOING events available to pick from — the page
+ * fetches these server-side via getOngoingEventsForPicker() (BE-J3).
  */
-export function RecapTool() {
+export function RecapTool({ events }: { events: OngoingEventOption[] }) {
+  const [selectedEventId, setSelectedEventId] = useState("");
   const [rawFile, setRawFile] = useState<File | null>(null);
   const [rekapFile, setRekapFile] = useState<File | null>(null);
   const [threshold, setThreshold] = useState("0.78");
@@ -24,6 +32,7 @@ export function RecapTool() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [st, setSt] = useState<JobStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rekapWarning, setRekapWarning] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<Record<number, boolean>>({});
   const [reviewBusy, setReviewBusy] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -80,12 +89,29 @@ export function RecapTool() {
     setReviewBusy(false);
   };
 
+  const selectEvent = (eventId: string) => {
+    setSelectedEventId(eventId);
+    const picked = events.find((e) => e.id === eventId);
+    if (picked) {
+      setTglPemeriksaan(toDDMMYYYY(picked.scheduledDate));
+      setPendidikan(picked.school.name);
+    }
+  };
+
   const go = async () => {
     setError(null);
+    setRekapWarning(null);
     setSt(null);
     setJobId(null);
     setDecisions({});
-    if (!rawFile || !rekapFile) return;
+    if (!rawFile || !rekapFile || !selectedEventId) return;
+
+    // FE-N3 — transition the event to REKAP first. A failure here (e.g. it's
+    // no longer ONGOING) is surfaced as a dismissible warning, not a hard
+    // stop: the admin already has the files ready, so the file-processing
+    // job still runs regardless — it doesn't depend on the dashboard's status.
+    const rekapResult = await triggerRekap(selectedEventId);
+    if (rekapResult.error) setRekapWarning(rekapResult.error);
 
     const fd = new FormData();
     fd.append("raw_file", rawFile);
@@ -110,6 +136,8 @@ export function RecapTool() {
 
   return (
     <div className="flex flex-col gap-6">
+      <EventPicker events={events} value={selectedEventId} onChange={selectEvent} />
+
       <UploadForm
         rawFile={rawFile}
         rekapFile={rekapFile}
@@ -126,6 +154,7 @@ export function RecapTool() {
         onSubmit={go}
         disabled={!rawFile || !rekapFile || processing || !!reviewing}
         processing={processing}
+        formDisabled={!selectedEventId}
       />
 
       {processing && st && (
@@ -151,6 +180,21 @@ export function RecapTool() {
           onSubmit={submitReview}
           busy={reviewBusy}
         />
+      )}
+
+      {rekapWarning && (
+        <div className="flex items-start justify-between gap-3 rounded-2xl border border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 sm:p-6">
+          <span>
+            <strong>Status jadwal:</strong> {rekapWarning} Proses file tetap berjalan.
+          </span>
+          <button
+            type="button"
+            onClick={() => setRekapWarning(null)}
+            className="shrink-0 cursor-pointer text-xs font-medium text-zinc-500 hover:text-zinc-900"
+          >
+            Tutup
+          </button>
+        </div>
       )}
 
       {error && (
