@@ -5,10 +5,11 @@ import { UploadForm } from "@/components/admin/recap/UploadForm";
 import { ReviewTable } from "@/components/admin/recap/ReviewTable";
 import { ResultsSummary } from "@/components/admin/recap/ResultsSummary";
 import { EventPicker } from "@/components/admin/recap/EventPicker";
-import { triggerRekap } from "@/server/actions/recap";
-import { toDDMMYYYY } from "@/lib/format";
+import { triggerRekap, uploadRecapResultToDrive } from "@/server/actions/recap";
+import { toDDMMYYYY, recapResultFilename } from "@/lib/format";
 import type { JobStatus } from "@/lib/recap-types";
-import type { OngoingEventOption } from "@/lib/queries/events";
+import type { RecapPickerEventOption } from "@/lib/queries/events";
+import type { DriveUploadState } from "@/components/admin/recap/ResultsSummary";
 
 const TERMINAL_STATUSES = ["done", "error", "awaiting_review"];
 
@@ -17,10 +18,13 @@ const TERMINAL_STATUSES = ["done", "error", "awaiting_review"];
  * in psikotes-automation), restyled monochrome. Talks only to our own
  * /api/admin/recap/* proxy routes — never to Flask directly.
  *
- * `events` (FE-N1) are the ONGOING events available to pick from — the page
- * fetches these server-side via getOngoingEventsForPicker() (BE-J3).
+ * `events` (FE-N1, revised) are ONGOING/REKAP/DONE events available to pick
+ * from — the page fetches these server-side via getRecapPickerEvents().
+ * REKAP/DONE are included on purpose: re-running recap for an
+ * already-recapped school (corrected raw file, re-upload to Drive, etc.)
+ * must stay possible, not locked out by status.
  */
-export function RecapTool({ events }: { events: OngoingEventOption[] }) {
+export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
   const [selectedEventId, setSelectedEventId] = useState("");
   const [rawFile, setRawFile] = useState<File | null>(null);
   const [rekapFile, setRekapFile] = useState<File | null>(null);
@@ -35,7 +39,14 @@ export function RecapTool({ events }: { events: OngoingEventOption[] }) {
   const [rekapWarning, setRekapWarning] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<Record<number, boolean>>({});
   const [reviewBusy, setReviewBusy] = useState(false);
+  const [driveUpload, setDriveUpload] = useState<DriveUploadState>({ status: "idle" });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Guards against firing the Drive upload twice for one job — React
+  // StrictMode double-invokes effects in dev, and uploadOrUpdateFile's
+  // create-vs-update branch reads driveResultFileId before this component's
+  // own state updates, so an unguarded double-fire could create two files
+  // instead of updating one.
+  const driveUploadedRef = useRef(false);
 
   const reviewing = st?.status === "awaiting_review";
   const processing = !!st && !TERMINAL_STATUSES.includes(st.status) && !st.error;
@@ -60,6 +71,17 @@ export function RecapTool({ events }: { events: OngoingEventOption[] }) {
         if (d.status === "done" || d.status === "error" || d.error) {
           if (pollRef.current) clearInterval(pollRef.current);
           if (d.error) setError(d.error);
+
+          // BE-N2 — auto-upload the finished result to Drive, once per job.
+          if (d.status === "done" && d.download_filename && !driveUploadedRef.current) {
+            driveUploadedRef.current = true;
+            setDriveUpload({ status: "uploading" });
+            uploadRecapResultToDrive(selectedEventId, d.download_filename).then((res) => {
+              setDriveUpload(
+                res.error ? { status: "error", message: res.error } : { status: "success" },
+              );
+            });
+          }
         }
       } catch {
         // transient network hiccup — next tick retries, matches original behavior
@@ -71,7 +93,7 @@ export function RecapTool({ events }: { events: OngoingEventOption[] }) {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [jobId]);
+  }, [jobId, selectedEventId]);
 
   const toggleDecision = (id: number) => setDecisions((d) => ({ ...d, [id]: !d[id] }));
 
@@ -104,6 +126,8 @@ export function RecapTool({ events }: { events: OngoingEventOption[] }) {
     setSt(null);
     setJobId(null);
     setDecisions({});
+    setDriveUpload({ status: "idle" });
+    driveUploadedRef.current = false;
     if (!rawFile || !rekapFile || !selectedEventId) return;
 
     // FE-N3 — transition the event to REKAP first. A failure here (e.g. it's
@@ -133,6 +157,14 @@ export function RecapTool({ events }: { events: OngoingEventOption[] }) {
       setError(`Gagal mengirim: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
+
+  const selectedEvent = events.find((e) => e.id === selectedEventId);
+  // Same "NAMA SEKOLAH - TANGGAL TES" format as the Drive upload (BE-N2/N3)
+  // — the direct web download and the Drive copy must never carry different
+  // names for the same result.
+  const resultFilename = selectedEvent
+    ? recapResultFilename(selectedEvent.school.name, selectedEvent.scheduledDate)
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -203,7 +235,14 @@ export function RecapTool({ events }: { events: OngoingEventOption[] }) {
         </div>
       )}
 
-      {done && st?.log && <ResultsSummary log={st.log} downloadFilename={st.download_filename} />}
+      {done && st?.log && (
+        <ResultsSummary
+          log={st.log}
+          downloadFilename={st.download_filename}
+          resultFilename={resultFilename}
+          driveUpload={driveUpload}
+        />
+      )}
     </div>
   );
 }

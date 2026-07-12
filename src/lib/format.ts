@@ -27,6 +27,17 @@ export function toDDMMYYYY(date: Date): string {
 }
 
 /**
+ * "NAMA SEKOLAH - TANGGAL TES.xlsx" — the recap result's display filename,
+ * shared by the Drive upload (BE-N2/N3) and the direct web download
+ * (FE-N4), so the two never drift into different naming schemes. Dashes,
+ * not slashes, in the date — Drive/most filesystems allow "/" in a name but
+ * it reads like a subpath, confusing.
+ */
+export function recapResultFilename(schoolName: string, scheduledDate: Date): string {
+  return `${schoolName} - ${toDDMMYYYY(scheduledDate).replace(/\//g, "-")}.xlsx`;
+}
+
+/**
  * Builds the "copy all links" plain-text block for the public school detail
  * page — see DESIGN.md §5 "Copy-all-links button" and PRD FR-2 for the exact
  * format. School name is forced uppercase; subtests without a url are

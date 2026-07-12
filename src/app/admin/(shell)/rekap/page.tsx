@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, FolderOpen } from "lucide-react";
 import { getRekapEvents } from "@/lib/queries/events";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -12,12 +12,26 @@ export default async function RekapMenuPage() {
   if ((await getCurrentRole()) !== "ADMIN") redirect("/admin");
 
   const events = await getRekapEvents();
+  const folderId = process.env.GOOGLE_DRIVE_RESULTS_FOLDER_ID;
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <PageHeader
         title="Menu Rekap"
         description="Jadwal yang sedang direkap. Tandai selesai setelah rekap final."
+        action={
+          folderId && (
+            <a
+              href={`https://drive.google.com/drive/folders/${folderId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
+            >
+              <FolderOpen aria-hidden="true" size={16} />
+              Buka Folder Hasil Rekap
+            </a>
+          )
+        }
       />
 
       {events.length === 0 ? (

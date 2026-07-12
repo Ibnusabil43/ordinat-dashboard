@@ -106,3 +106,28 @@ export async function getOngoingEventsForPicker() {
 }
 
 export type OngoingEventOption = Awaited<ReturnType<typeof getOngoingEventsForPicker>>[number];
+
+/**
+ * Events eligible for Automated Recap's picker (FE-N1, revised) — ONGOING,
+ * REKAP, and DONE. Deliberately NOT the same set as getOngoingEventsForPicker:
+ * that one only lists ONGOING because it's shared with the webhook's
+ * "eligible to enter REKAP" check (BE-J3/BE-E2). This one backs the admin
+ * picker, where re-running recap for a school already past REKAP/DONE must
+ * stay possible — reprocessing a corrected raw file, or re-uploading to
+ * Drive, shouldn't be locked out just because the status already advanced.
+ * `status` is included so the picker can label already-recapped entries.
+ */
+export async function getRecapPickerEvents() {
+  return prisma.psikotesEvent.findMany({
+    where: { status: { in: ["ONGOING", "REKAP", "DONE"] } },
+    orderBy: { scheduledDate: "desc" },
+    select: {
+      id: true,
+      scheduledDate: true,
+      status: true,
+      school: { select: { name: true, slug: true } },
+    },
+  });
+}
+
+export type RecapPickerEventOption = Awaited<ReturnType<typeof getRecapPickerEvents>>[number];
