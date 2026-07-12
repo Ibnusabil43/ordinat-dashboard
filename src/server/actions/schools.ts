@@ -30,6 +30,11 @@ function revalidateSchoolPaths() {
   revalidatePath("/admin/sekolah");
 }
 
+/**
+ * kelasCount (BE-G4) is a bulk-create shortcut, not a School field — it never
+ * gets passed to prisma.school.create/update directly, always destructured
+ * out first so an extra key never reaches a Prisma call that doesn't expect it.
+ */
 export async function createSchool(
   _prevState: SchoolActionState | undefined,
   formData: FormData,
@@ -40,14 +45,28 @@ export async function createSchool(
   const parsed = schoolSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
+    kelasCount: formData.get("kelasCount") || undefined,
   });
   if (!parsed.success) {
     const f = parsed.error.flatten().fieldErrors;
     return { fieldErrors: { name: f.name?.[0], slug: f.slug?.[0] } };
   }
 
+  const { name, slug, kelasCount } = parsed.data;
+
   try {
-    await prisma.school.create({ data: parsed.data });
+    await prisma.$transaction(async (tx) => {
+      const school = await tx.school.create({ data: { name, slug } });
+      if (kelasCount && kelasCount > 0) {
+        await tx.kelas.createMany({
+          data: Array.from({ length: kelasCount }, (_, i) => ({
+            schoolId: school.id,
+            name: `Kelas ${i + 1}`,
+            order: i,
+          })),
+        });
+      }
+    });
   } catch (e) {
     if (isDuplicateSlug(e)) return { fieldErrors: { slug: DUPLICATE_SLUG_ERROR } };
     return { error: "Gagal menyimpan sekolah. Coba lagi." };
@@ -77,7 +96,7 @@ export async function updateSchool(
   try {
     // Prisma's unique constraint already excludes "no change" (a row keeps its
     // own slug), so a P2002 here genuinely means another school owns that slug.
-    await prisma.school.update({ where: { id }, data: parsed.data });
+    await prisma.school.update({ where: { id }, data: { name: parsed.data.name, slug: parsed.data.slug } });
   } catch (e) {
     if (isDuplicateSlug(e)) return { fieldErrors: { slug: DUPLICATE_SLUG_ERROR } };
     return { error: "Gagal memperbarui sekolah. Coba lagi." };
