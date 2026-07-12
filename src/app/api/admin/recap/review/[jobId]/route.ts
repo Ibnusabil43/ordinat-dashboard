@@ -1,11 +1,12 @@
 /** Proxy: POST /api/admin/recap/review/[jobId] -> Flask POST /review/<job_id>. Submits borderline-match decisions. */
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth-guard";
+import { requireAdmin } from "@/lib/auth-guard";
 import { recapToolUrl, recapAuthHeader } from "@/lib/recap-proxy";
 
 export async function POST(request: Request, { params }: { params: Promise<{ jobId: string }> }) {
-  if (!(await getCurrentUser())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireAdmin();
+  if ("error" in guard) {
+    return NextResponse.json({ error: guard.error }, { status: 401 });
   }
   const { jobId } = await params;
 

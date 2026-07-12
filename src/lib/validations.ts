@@ -13,8 +13,24 @@ export const schoolSchema = z.object({
     .trim()
     .toUpperCase()
     .regex(/^[A-Z0-9-]+$/, "Slug hanya boleh huruf, angka, dan tanda '-'"),
+  // Persisted School column (BE-L1) — the ID of the one spreadsheet with 12
+  // tabs Monitoring reads from. Empty string means "not set", same as null.
+  driveRawSheetId: z
+    .string()
+    .trim()
+    .transform((v) => v || null)
+    .optional(),
 });
 export type SchoolInput = z.infer<typeof schoolSchema>;
+
+// Kelas: name is required, tester is optional free text (BE-G1). Both fields
+// are submitted independently from inline-editable table cells (FE-K2), so
+// each is validated on its own rather than as one combined object.
+export const kelasNameSchema = z.string().trim().min(1, "Nama kelas wajib diisi");
+export const kelasTesterSchema = z
+  .string()
+  .trim()
+  .transform((v) => v || null);
 
 export const eventSchema = z.object({
   schoolId: z.string().min(1, "Pilih sekolah").cuid("Sekolah tidak valid"),

@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { SUBTEST_TYPES, suggestTinyUrl } from "@/lib/constants";
+import { suggestTinyUrl } from "@/lib/constants";
+import type { SubtestType } from "@/lib/constants";
 import type { LinksActionState } from "@/server/actions/links";
 
 type Action = (
@@ -34,18 +35,21 @@ export function LinkForm({
   action,
   slug,
   existing,
+  subtests,
 }: {
   action: Action;
   slug: string;
   /** code -> saved url, only for subtests that already have one. */
   existing: Record<string, string>;
+  /** The event's active subtests (defaults to all 12 via resolveActiveSubtests). */
+  subtests: readonly SubtestType[];
 }) {
   const [state, formAction] = useActionState(action, undefined);
 
   return (
     <form action={formAction} className="flex flex-col gap-6 pb-4 sm:pb-0">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {SUBTEST_TYPES.map((s) => {
+        {subtests.map((s) => {
           const fieldError = state?.fieldErrors?.[s.code];
           const suggestion = suggestTinyUrl(slug, s.code);
           return (

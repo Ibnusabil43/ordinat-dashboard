@@ -8,10 +8,11 @@ export interface LinkRow {
 }
 
 /**
- * Table of subtest links for the public school detail page (FE-C2).
- * Reuses the generic DataTable (collapses to card-stack on mobile).
+ * Table of subtest links — Event Detail page's "Link Subtes" tab (FE-G4,
+ * moved here in v2.0 from the now-removed public school page it originated
+ * on). Reuses the generic DataTable (collapses to card-stack on mobile).
  * Rows without a url render muted/non-interactive, not hidden — an
- * in-progress setup shouldn't look broken to a visitor.
+ * in-progress setup shouldn't look broken.
  */
 export function LinkTable({ rows }: { rows: LinkRow[] }) {
   const columns: DataTableColumn<LinkRow>[] = [

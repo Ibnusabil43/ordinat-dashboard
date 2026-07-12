@@ -37,12 +37,14 @@ export function EventForm({
   initial,
   submitLabel,
   successRedirect,
+  cancelHref = "/jadwal",
 }: {
   action: Action;
   schools: SchoolOption[];
   initial?: { schoolId: string; scheduledDate: string };
   submitLabel: string;
   successRedirect: string;
+  cancelHref?: string;
 }) {
   const router = useRouter();
   const [schoolId, setSchoolId] = useState(initial?.schoolId ?? "");
@@ -98,7 +100,7 @@ export function EventForm({
         {schools.length === 0 && (
           <p className="mt-1 text-xs text-zinc-500">
             Belum ada sekolah.{" "}
-            <Link href="/admin/sekolah/baru" className="text-zinc-900 underline">
+            <Link href="/sekolah/baru" className="text-zinc-900 underline">
               Tambah sekolah dulu
             </Link>
             .
@@ -128,7 +130,7 @@ export function EventForm({
       <div className="flex gap-2">
         <SubmitButton label={submitLabel} />
         <Link
-          href="/admin/jadwal"
+          href={cancelHref}
           className="flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
         >
           Batal

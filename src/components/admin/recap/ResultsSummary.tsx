@@ -1,4 +1,4 @@
-import { CheckCheck, IdCard, AlertTriangle, Shuffle, Download } from "lucide-react";
+import { CheckCheck, IdCard, AlertTriangle, Shuffle, Download, Cloud, CloudOff } from "lucide-react";
 import { clsx } from "clsx";
 import type { RecapLog } from "@/lib/recap-types";
 
@@ -8,6 +8,35 @@ function progressFillClass(pct: number): string {
   if (pct >= 90) return "bg-zinc-600";
   if (pct > 0) return "bg-zinc-400";
   return "bg-zinc-200";
+}
+
+/** State of the automatic Drive upload (BE-N2/N3) — deliberately separate from the recap job's own done/error state (FE-N4). */
+export type DriveUploadState =
+  | { status: "idle" }
+  | { status: "uploading" }
+  | { status: "success" }
+  | { status: "error"; message: string };
+
+/** Inline confirmation next to the download link — a Drive failure never blocks or hides the (still-successful) download. */
+function DriveUploadStatus({ state }: { state: DriveUploadState }) {
+  if (state.status === "idle") return null;
+  if (state.status === "uploading") {
+    return <span className="flex items-center gap-1.5 text-xs text-zinc-500">Menyimpan ke Drive...</span>;
+  }
+  if (state.status === "success") {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <Cloud aria-hidden="true" size={14} />
+        Hasil tersimpan ke Drive
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-zinc-400" title={state.message}>
+      <CloudOff aria-hidden="true" size={14} />
+      Gagal menyimpan ke Drive
+    </span>
+  );
 }
 
 function StatCard({ icon: Icon, value, label }: { icon: typeof CheckCheck; value: number; label: string }) {
@@ -23,22 +52,40 @@ function StatCard({ icon: Icon, value, label }: { icon: typeof CheckCheck; value
 export function ResultsSummary({
   log,
   downloadFilename,
+  resultFilename,
+  driveUpload = { status: "idle" },
 }: {
   log: RecapLog;
   downloadFilename: string | null;
+  /** "NAMA SEKOLAH - TANGGAL TES.xlsx" (same format as the Drive upload) —
+   *  passed as `?name=` so the download proxy route forces this as the saved
+   *  Content-Disposition filename, overriding Flask's own internal job name.
+   *  The anchor's `download` attribute alone isn't reliable here: browsers
+   *  prefer a response's own Content-Disposition filename when one is
+   *  present, so the override has to happen server-side. Falls back to
+   *  `downloadFilename` (Flask's internal job name) if somehow unavailable. */
+  resultFilename?: string | null;
+  driveUpload?: DriveUploadState;
 }) {
   const gugusEntries = Object.entries(log.per_gugus);
+  const savedAs = resultFilename ?? downloadFilename;
 
   return (
     <div className="flex flex-col gap-6">
       {downloadFilename && (
-        <a
-          href={`/api/admin/recap/download/${encodeURIComponent(downloadFilename)}`}
-          className="flex h-10 w-fit items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
-        >
-          <Download aria-hidden="true" size={16} />
-          Download Hasil
-        </a>
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href={`/api/admin/recap/download/${encodeURIComponent(downloadFilename)}${
+              resultFilename ? `?name=${encodeURIComponent(resultFilename)}` : ""
+            }`}
+            download={savedAs ?? undefined}
+            className="flex h-10 w-fit items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
+          >
+            <Download aria-hidden="true" size={16} />
+            Download Hasil
+          </a>
+          <DriveUploadStatus state={driveUpload} />
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

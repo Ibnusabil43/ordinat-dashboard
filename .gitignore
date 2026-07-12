@@ -16,3 +16,6 @@ tsconfig.tsbuildinfo
 CLAUDE.md
 package-lock.json
 package.json
+
+# One-off scripts containing plaintext credentials — never commit
+/scripts/provision-users.mjs

@@ -10,42 +10,79 @@ import {
   CalendarDays,
   ClipboardList,
   FileSpreadsheet,
+  Activity,
   LogOut,
   Menu,
+  User,
   X,
   type LucideIcon,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { signOutAction } from "@/server/actions/auth";
+import type { Role } from "@/lib/roles";
 
-const MENU: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/sekolah", label: "Manajemen Sekolah", icon: School },
-  { href: "/admin/jadwal", label: "Manajemen Jadwal", icon: CalendarDays },
-  { href: "/admin/rekap", label: "Menu Rekap", icon: ClipboardList },
-  { href: "/admin/automated-recap", label: "Automated Recap", icon: FileSpreadsheet },
+const MENU: { href: string; label: string; icon: LucideIcon; roles: Role[] }[] = [
+  { href: "/", label: "Overview", icon: LayoutDashboard, roles: ["ADMIN", "PIC_LAPANGAN"] },
+  {
+    href: "/sekolah",
+    label: "Manajemen Sekolah",
+    icon: School,
+    roles: ["ADMIN", "PIC_LAPANGAN"],
+  },
+  {
+    href: "/jadwal",
+    label: "Manajemen Jadwal",
+    icon: CalendarDays,
+    roles: ["ADMIN", "PIC_LAPANGAN"],
+  },
+  { href: "/rekap", label: "Menu Rekap", icon: ClipboardList, roles: ["ADMIN"] },
+  {
+    href: "/automated-recap",
+    label: "Automated Recap",
+    icon: FileSpreadsheet,
+    roles: ["ADMIN"],
+  },
+  {
+    href: "/monitoring",
+    label: "Monitoring",
+    icon: Activity,
+    roles: ["ADMIN", "PIC_LAPANGAN", "TESTER"],
+  },
 ];
 
-/** Desktop: fixed left sidebar. Mobile: top bar + drawer. Spec: DESIGN.md §6. */
-export function Sidebar({ username }: { username: string }) {
+const DASHBOARD_TITLE: Record<Role, string> = {
+  ADMIN: "Admin Dashboard",
+  PIC_LAPANGAN: "PIC Dashboard",
+  TESTER: "Tester Dashboard",
+};
+
+/**
+ * Desktop: fixed left sidebar. Mobile: top bar + drawer. Spec: DESIGN.md §6.
+ * Shared shell for all 3 roles — including TESTER, who just sees a menu
+ * filtered down to "Monitoring" (the only page they're allowed on; every
+ * other path still bounces them back server-side, middleware.ts).
+ */
+export function Sidebar({ username, role }: { username: string; role: Role }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const menu = MENU.filter((item) => item.roles.includes(role));
 
   const wordmark = (
     <span className="flex min-w-0 items-center gap-2">
       <Image src="/logo.png" alt="" width={24} height={24} className="shrink-0" />
       <span className="truncate text-lg font-bold tracking-tight text-zinc-900">
-        Admin Dashboard
+        {DASHBOARD_TITLE[role]}
       </span>
     </span>
   );
 
   const nav = (
     <nav className="flex flex-1 flex-col gap-1 p-3">
-      {MENU.map(({ href, label, icon: Icon }) => (
+      {menu.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
@@ -66,7 +103,12 @@ export function Sidebar({ username }: { username: string }) {
 
   const footer = (
     <div className="border-t border-zinc-200 p-3">
-      <p className="truncate px-3 text-xs text-zinc-500">{username}</p>
+      <div className="flex items-center gap-2 px-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-200">
+          <User aria-hidden="true" size={16} className="text-zinc-500" />
+        </span>
+        <p className="truncate text-xs text-zinc-500">{username}</p>
+      </div>
       <form action={signOutAction}>
         <button
           type="submit"

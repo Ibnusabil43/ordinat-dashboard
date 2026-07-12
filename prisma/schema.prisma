@@ -20,20 +20,54 @@ datasource db {
 
 enum EventStatus {
   SCHEDULED // Terjadwal
-  ONGOING   // Sedang Psikotes
-  REKAP     // Tahap Rekap
-  DONE      // Tahap Resume
+  ONGOING // Sedang Psikotes
+  REKAP // Tahap Rekap
+  DONE // Tahap Resume
 }
 
 model School {
-  id        String          @id @default(cuid())
-  name      String // "SMAN 1 CIWARINGIN"
-  slug      String          @unique // "CIWARINGIN26" — used in the tiny.cc URL pattern
-  events    PsikotesEvent[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id              String          @id @default(cuid())
+  name            String // "SMAN 1 CIWARINGIN"
+  slug            String          @unique // "CIWARINGIN26" — used in the tiny.cc URL pattern
+  // One Google Sheets spreadsheet ID, 12 internal tabs (one per subtest,
+  // mirrors Flask's RAW workbook shape) — read-only, used by Monitoring
+  // (FR-11/FR-15). NOT a folder — there is no per-school Drive folder;
+  // recap results all go to one shared folder (GOOGLE_DRIVE_RESULTS_FOLDER_ID
+  // env var), distinguished by filename instead. See CLAUDE.md > Domain.
+  driveRawSheetId String?
+  // Subtest codes this school actually runs (defaults to all 13, EPPS→PAPI).
+  // CONVENTION: an empty array means "all 13" (unconfigured) — so existing
+  // rows need no backfill and resolveActiveSubtests() maps [] → the full set.
+  // A school-level setting, not per-event — which subtests a school runs
+  // doesn't change year to year, so every PsikotesEvent for this school
+  // shares it. Drives which subtest link slots show in Manajemen Link + the
+  // Link Subtes/Monitoring views; Monitoring's submission summary is
+  // unaffected (it reads the raw sheet's physical tabs, a different axis).
+  // See src/lib/constants.ts.
+  activeSubtests  String[]        @default([])
+  events          PsikotesEvent[]
+  kelas           Kelas[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([name])
+}
+
+// Persists across test events/years, same as School itself — not tied to a
+// specific PsikotesEvent. `tester` is a free-text PIC name, unrelated to the
+// TESTER account role (naming collision, same word different concept — see
+// CLAUDE.md > Domain > Kelas & tester).
+model Kelas {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name      String // free text, e.g. "X-1" — not an enum, schools name kelas differently
+  tester    String? // PIC name; null = not assigned yet
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
 }
 
 // Fixed lookup; seeded once from SUBTEST_TYPES (src/lib/constants.ts).
@@ -47,16 +81,21 @@ model SubtestType {
 }
 
 model PsikotesEvent {
-  id            String        @id @default(cuid())
-  schoolId      String
-  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  scheduledDate DateTime
-  status        EventStatus   @default(SCHEDULED)
-  links         SubtestLink[]
-  recapJobs     RecapJob[]
-  createdById   String? // auth.users.id (Supabase) of the admin who created this event — no FK, cross-schema
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  schoolId          String
+  school            School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  scheduledDate     DateTime
+  status            EventStatus   @default(SCHEDULED)
+  links             SubtestLink[]
+  recapJobs         RecapJob[]
+  createdById       String? // auth.users.id (Supabase) of the admin who created this event — no FK, cross-schema
+  // Drive file ID of the uploaded recap result (FR-16). Presence means
+  // "we've uploaded before" — the next upload updates this file in place
+  // (same ID, new content) instead of creating a duplicate. Nullable;
+  // absence just means no result uploaded yet, not an error state.
+  driveResultFileId String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([schoolId])
   @@index([status])

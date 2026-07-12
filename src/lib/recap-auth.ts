@@ -3,14 +3,7 @@
  * This is NOT admin-session auth — the Flask tool has no session, it
  * authenticates with the shared RECAP_SERVICE_TOKEN. See CLAUDE.md > Integration.
  */
-
-/** Constant-time string compare (equal-length only; length is not secret here). */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return mismatch === 0;
-}
+import { safeEqual } from "@/lib/token-auth";
 
 /**
  * True only if the request carries `Authorization: Bearer <RECAP_SERVICE_TOKEN>`.
