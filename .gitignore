@@ -19,3 +19,4 @@ package.json
 
 # One-off scripts containing plaintext credentials — never commit
 /scripts/provision-users.mjs
+/scripts/update-users.mjs
