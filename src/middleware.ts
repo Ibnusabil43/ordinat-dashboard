@@ -1,19 +1,22 @@
 /**
  * Refreshes the Supabase session cookie on every request and gates the
- * entire app — v2.0 is fully private, there's no public content left
+ * entire app — the whole app is private, there's no public content left
  * (CLAUDE.md > Auth model). This is the FIRST layer of access control —
  * every admin server action must still check auth.getUser() itself.
  *
- * Also owns two role-aware redirects that only make sense at this layer
- * since they apply across many pages at once:
- *  - root "/" has no content of its own (BE-K2) — it always redirects.
- *  - TESTER can only ever land on /admin/monitoring (BE-H4a) — every other
- *    /admin/* path bounces back there. This is a deny-everything-except
- *    shape, deliberately different from BE-H2's admin-only allow-list
- *    (see CLAUDE.md > Domain > Roles).
+ * URLs have no /admin prefix — the app is all-private, so the segment was
+ * redundant. Pages live at the root: "/" is Overview, "/monitoring",
+ * "/jadwal", etc. "/login" is the one path reachable while logged out.
  *
- * Role comes from the same `user` this middleware already fetches via
- * getUser() — no second network call, and no need for auth-guard.ts's
+ * Owns the one role-aware redirect that only makes sense at this layer
+ * (it spans every page): TESTER can only ever be on /monitoring (BE-H4a) —
+ * every other path, "/" included, bounces there. Deny-everything-except,
+ * deliberately different from BE-H2's admin-only allow-list (CLAUDE.md >
+ * Domain > Roles). Non-TESTER roles land on "/" (Overview) directly, so no
+ * root redirect is needed anymore — the page renders in place.
+ *
+ * Role comes from the same JWT claims this middleware already reads via
+ * getClaims() — no extra call, and no need for auth-guard.ts's
  * next/headers-based Supabase client, which isn't edge-safe here.
  */
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
@@ -42,33 +45,36 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT locally against the project's cached JWKS —
+  // no network round-trip on the happy path, unlike getUser() which calls the
+  // Auth server (~100-200ms) on EVERY request (every navigation + asset). It
+  // still refreshes an expired session cookie: getClaims() reads the session
+  // via getSession() internally, which auto-refreshes and re-writes the cookie
+  // through the setAll handler above. Same trade-off the shell layout already
+  // makes (see layout.tsx) — safe here because access control is
+  // defense-in-depth: every admin server action re-checks auth itself.
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims ?? null;
 
   const { pathname } = request.nextUrl;
-  const isLoginRoute = pathname === "/admin/login";
+  const isLoginRoute = pathname === "/login";
 
-  if (!user) {
+  if (!claims) {
     if (isLoginRoute) return response;
     const url = request.nextUrl.clone();
-    url.pathname = "/admin/login";
+    url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  const role = roleFromAppMetadata(user.app_metadata);
-  const roleLanding = role === "TESTER" ? "/admin/monitoring" : "/admin";
+  const role = roleFromAppMetadata(claims.app_metadata as Record<string, unknown> | undefined);
 
-  if (pathname === "/") {
+  // TESTER can only ever be on Monitoring — bounce everything else, including
+  // "/" (Overview) and "/login". Non-TESTER roles fall through and get "/"
+  // (Overview) or whatever page they navigated to, rendered in place.
+  if (role === "TESTER" && !pathname.startsWith("/monitoring")) {
     const url = request.nextUrl.clone();
-    url.pathname = roleLanding;
-    return NextResponse.redirect(url);
-  }
-
-  if (role === "TESTER" && pathname.startsWith("/admin") && !pathname.startsWith("/admin/monitoring")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin/monitoring";
+    url.pathname = "/monitoring";
     return NextResponse.redirect(url);
   }
 
@@ -86,6 +92,6 @@ export const config = {
   // logo.png is exempted alongside icon.png/favicon.ico (Phase 11) — the
   // login page renders it while logged out, and Next's image optimizer
   // fetches the source from this same origin, so redirecting the request
-  // to /admin/login instead of serving it broke the image entirely.
+  // to /login instead of serving it broke the image entirely.
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon.png|logo.png).*)"],
 };

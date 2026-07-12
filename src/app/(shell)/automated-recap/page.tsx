@@ -6,7 +6,7 @@ import { getRecapPickerEvents } from "@/lib/queries/events";
 
 /** ADMIN-only page — PIC_LAPANGAN's Sidebar hides the link, but a direct URL must still bounce. */
 export default async function AutomatedRecapPage() {
-  if ((await getCurrentRole()) !== "ADMIN") redirect("/admin");
+  if ((await getCurrentRole()) !== "ADMIN") redirect("/");
 
   const events = await getRecapPickerEvents();
 

@@ -9,7 +9,7 @@ import { getCurrentRole } from "@/lib/auth-guard";
 
 /** ADMIN-only page (BE-H2) — PIC_LAPANGAN's Sidebar hides the link, but a direct URL must still bounce. */
 export default async function RekapMenuPage() {
-  if ((await getCurrentRole()) !== "ADMIN") redirect("/admin");
+  if ((await getCurrentRole()) !== "ADMIN") redirect("/");
 
   const events = await getRekapEvents();
   const folderId = process.env.GOOGLE_DRIVE_RESULTS_FOLDER_ID;

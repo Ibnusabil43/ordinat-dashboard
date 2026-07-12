@@ -19,7 +19,7 @@ export default async function KelasManagementPage({
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <Link
-        href={`/admin/sekolah/${school.id}`}
+        href={`/sekolah/${school.id}`}
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />

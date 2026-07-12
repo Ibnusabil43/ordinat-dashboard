@@ -32,7 +32,7 @@ export default async function SchoolListPage() {
       render: (s) => (
         <div className="flex items-center justify-end gap-1">
           <Link
-            href={`/admin/sekolah/${s.id}`}
+            href={`/sekolah/${s.id}`}
             aria-label={`Edit ${s.name}`}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900"
           >
@@ -51,7 +51,7 @@ export default async function SchoolListPage() {
         description="Kelola daftar sekolah yang mengikuti psikotes."
         action={
           <Link
-            href="/admin/sekolah/baru"
+            href="/sekolah/baru"
             className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
           >
             <Plus aria-hidden="true" size={18} />
@@ -71,7 +71,7 @@ export default async function SchoolListPage() {
             description="Tambahkan sekolah pertama untuk mulai menjadwalkan psikotes."
             action={
               <Link
-                href="/admin/sekolah/baru"
+                href="/sekolah/baru"
                 className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
               >
                 <Plus aria-hidden="true" size={18} />

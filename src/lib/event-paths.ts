@@ -10,8 +10,8 @@ import { revalidatePath } from "next/cache";
  * needs to be callable as a plain sync helper from a Route Handler too.
  */
 export function revalidateEventPaths(opts: { id?: string } = {}) {
-  revalidatePath("/admin/jadwal");
-  revalidatePath("/admin/rekap");
-  revalidatePath("/admin");
-  if (opts.id) revalidatePath(`/admin/jadwal/${opts.id}`);
+  revalidatePath("/jadwal");
+  revalidatePath("/rekap");
+  revalidatePath("/");
+  if (opts.id) revalidatePath(`/jadwal/${opts.id}`);
 }

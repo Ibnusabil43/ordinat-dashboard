@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
@@ -6,13 +7,16 @@ import { getSubmissionSummary, getLatestEventLinks } from "@/lib/queries/monitor
 import { getKelasBySchoolId } from "@/lib/queries/kelas";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { SubmissionSummary } from "@/components/admin/monitoring/SubmissionSummary";
+import {
+  SubmissionSummary,
+  SubmissionSummarySkeleton,
+} from "@/components/admin/monitoring/SubmissionSummary";
 import { NameCheck } from "@/components/admin/monitoring/NameCheck";
 import { Tabs } from "@/components/Tabs";
 import { LinkTable, type LinkRow } from "@/components/LinkTable";
 import { TesterTable } from "@/components/TesterTable";
 import { CopyLinksButton } from "@/components/CopyLinksButton";
-import { SUBTEST_TYPES } from "@/lib/constants";
+import { resolveActiveSubtests } from "@/lib/constants";
 import { buildLinkCopyText } from "@/lib/format";
 
 /**
@@ -43,16 +47,17 @@ export default async function SchoolMonitoringPage({
     getLatestEventLinks(school.id),
     getKelasBySchoolId(school.id),
   ]);
-  const linkRows: LinkRow[] = SUBTEST_TYPES.map((s) => ({
+  // Only the latest event's active subtests (defaults to all 12).
+  const linkRows: LinkRow[] = resolveActiveSubtests(eventLinks.activeSubtests).map((s) => ({
     code: s.code,
     label: s.label,
-    url: eventLinks.find((l) => l.subtestType.code === s.code)?.url ?? null,
+    url: eventLinks.links.find((l) => l.subtestType.code === s.code)?.url ?? null,
   }));
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <Link
-        href="/admin/monitoring"
+        href="/monitoring"
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
@@ -68,7 +73,11 @@ export default async function SchoolMonitoringPage({
           description={`Atur Drive Raw Sheet ID untuk ${school.name} di halaman Manajemen Sekolah agar data submisi bisa dipantau di sini.`}
         />
       ) : (
-        <SummarySection schoolId={school.id} />
+        // Streamed: the Sheets read is the slow part, so the page shell + tabs
+        // below paint immediately and the summary fills in when it resolves.
+        <Suspense fallback={<SubmissionSummarySkeleton />}>
+          <SummarySection schoolId={school.id} />
+        </Suspense>
       )}
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">

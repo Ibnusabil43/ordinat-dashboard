@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/EmptyState";
  * (desktop table, mobile card-stack), not a card grid (revised after review
  * — a plain list reads faster than cards for a pure navigation list). All 3
  * roles reach this, including TESTER, per PRD FR-11. Each row links to the
- * per-school dashboard at /admin/monitoring/[schoolId].
+ * per-school dashboard at /monitoring/[schoolId].
  */
 export default async function MonitoringPage() {
   const schools = await getSchoolsForMonitoring();
@@ -33,7 +33,7 @@ export default async function MonitoringPage() {
       className: "text-right",
       render: (s) => (
         <Link
-          href={`/admin/monitoring/${s.id}`}
+          href={`/monitoring/${s.id}`}
           aria-label={`Lihat monitoring ${s.name}`}
           className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 transition hover:text-zinc-500"
         >

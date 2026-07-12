@@ -9,7 +9,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { subtestLinksSchema } from "@/lib/validations";
-import { SUBTEST_CODES } from "@/lib/constants";
+import { resolveActiveSubtests } from "@/lib/constants";
 import { requireAdmin } from "@/lib/auth-guard";
 
 export interface LinksActionState {
@@ -27,7 +27,16 @@ export async function upsertSubtestLinks(
   const guard = await requireAdmin();
   if ("error" in guard) return { error: guard.error };
 
-  const links = SUBTEST_CODES.map((code) => ({
+  // Only touch this event's active subtests — the form only renders those,
+  // and a subtest that was deactivated should keep whatever link it had
+  // rather than being silently wiped by an absent (empty) form field.
+  const event = await prisma.psikotesEvent.findUnique({
+    where: { id: eventId },
+    select: { activeSubtests: true },
+  });
+  if (!event) return { error: "Jadwal tidak ditemukan." };
+
+  const links = resolveActiveSubtests(event.activeSubtests).map(({ code }) => ({
     code,
     url: (formData.get(`url_${code}`) as string | null)?.trim() ?? "",
   }));
@@ -71,9 +80,9 @@ export async function upsertSubtestLinks(
     return { error: "Gagal menyimpan link. Coba lagi." };
   }
 
-  revalidatePath(`/admin/jadwal/${eventId}/link`);
-  revalidatePath(`/admin/jadwal/${eventId}`);
-  revalidatePath("/admin/jadwal");
+  revalidatePath(`/jadwal/${eventId}/link`);
+  revalidatePath(`/jadwal/${eventId}`);
+  revalidatePath("/jadwal");
 
   return { success: true };
 }

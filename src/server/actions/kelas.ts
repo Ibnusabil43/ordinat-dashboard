@@ -16,9 +16,9 @@ import { requireStaff } from "@/lib/auth-guard";
 
 /** Kelas persists across events/years, so every event this school has ever had needs its Tester tab refreshed. */
 async function revalidateKelasPaths(schoolId: string) {
-  revalidatePath(`/admin/sekolah/${schoolId}/kelas`);
+  revalidatePath(`/sekolah/${schoolId}/kelas`);
   const events = await prisma.psikotesEvent.findMany({ where: { schoolId }, select: { id: true } });
-  for (const event of events) revalidatePath(`/admin/jadwal/${event.id}`);
+  for (const event of events) revalidatePath(`/jadwal/${event.id}`);
 }
 
 export async function createKelas(schoolId: string, formData: FormData): Promise<{ error?: string }> {

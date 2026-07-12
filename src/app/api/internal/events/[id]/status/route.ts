@@ -43,10 +43,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: result.message }, { status });
   }
 
-  revalidatePath("/admin/rekap");
-  revalidatePath("/admin/jadwal");
-  revalidatePath(`/admin/jadwal/${id}`);
-  revalidatePath("/admin");
+  revalidatePath("/rekap");
+  revalidatePath("/jadwal");
+  revalidatePath(`/jadwal/${id}`);
+  revalidatePath("/");
 
   return NextResponse.json({ status: "REKAP" }, { status: 200 });
 }
