@@ -13,8 +13,20 @@ export const schoolSchema = z.object({
     .trim()
     .toUpperCase()
     .regex(/^[A-Z0-9-]+$/, "Slug hanya boleh huruf, angka, dan tanda '-'"),
+  // Bulk-create shortcut only (BE-G4) — not persisted as its own field, just
+  // creates N empty Kelas rows alongside the school. Absent/0 = create none.
+  kelasCount: z.coerce.number().int().min(0).max(50).optional(),
 });
 export type SchoolInput = z.infer<typeof schoolSchema>;
+
+// Kelas: name is required, tester is optional free text (BE-G1). Both fields
+// are submitted independently from inline-editable table cells (FE-K2), so
+// each is validated on its own rather than as one combined object.
+export const kelasNameSchema = z.string().trim().min(1, "Nama kelas wajib diisi");
+export const kelasTesterSchema = z
+  .string()
+  .trim()
+  .transform((v) => v || null);
 
 export const eventSchema = z.object({
   schoolId: z.string().min(1, "Pilih sekolah").cuid("Sekolah tidak valid"),

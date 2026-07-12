@@ -109,6 +109,29 @@ export function SchoolForm({
         {slugError && <p className="mt-1 text-xs text-red-600">{slugError}</p>}
       </div>
 
+      {/* Bulk-create shortcut (BE-G4) — create-only, no `initial` means this is a new school.
+          Editing an existing school doesn't re-trigger kelas creation; use "Kelola Kelas" for that. */}
+      {!initial && (
+        <div>
+          <label htmlFor="kelasCount" className="mb-1.5 block text-sm font-medium text-zinc-900">
+            Jumlah Kelas <span className="font-normal text-zinc-400">(opsional)</span>
+          </label>
+          <input
+            id="kelasCount"
+            name="kelasCount"
+            type="number"
+            min={0}
+            max={50}
+            placeholder="0"
+            className={inputClass(false)}
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            Langsung buat sejumlah baris kelas kosong. Bisa ditambah/diubah kapan saja lewat &ldquo;Kelola
+            Kelas&rdquo;.
+          </p>
+        </div>
+      )}
+
       {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
 
       <div className="flex gap-2">

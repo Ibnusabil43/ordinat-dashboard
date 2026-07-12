@@ -22,8 +22,9 @@ export async function getEvents() {
 export type EventListItem = Awaited<ReturnType<typeof getEvents>>[number];
 
 /**
- * Single event by id, or null. Includes the school, its links (with subtest
- * type), and the most recent recap job — enough for the detail page.
+ * Single event by id, or null. Includes the school (with its kelas, for the
+ * detail page's "Tester" tab — BE-G3, v2.0), its links (with subtest type),
+ * and the most recent recap job — enough for the detail page.
  */
 export async function getEventById(id: string) {
   return prisma.psikotesEvent.findUnique({
@@ -32,7 +33,17 @@ export async function getEventById(id: string) {
       id: true,
       scheduledDate: true,
       status: true,
-      school: { select: { id: true, name: true, slug: true } },
+      school: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          kelas: {
+            orderBy: { order: "asc" },
+            select: { id: true, name: true, tester: true },
+          },
+        },
+      },
       _count: { select: { links: true } },
       links: {
         select: {

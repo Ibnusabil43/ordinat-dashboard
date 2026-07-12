@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { getSchoolById } from "@/lib/queries/schools";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { SchoolForm } from "@/components/admin/SchoolForm";
@@ -24,7 +24,19 @@ export default async function EditSchoolPage({
         <ArrowLeft aria-hidden="true" size={16} />
         Kembali
       </Link>
-      <PageHeader title="Edit Sekolah" description={school.name} />
+      <PageHeader
+        title="Edit Sekolah"
+        description={school.name}
+        action={
+          <Link
+            href={`/admin/sekolah/${school.id}/kelas`}
+            className="flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
+          >
+            <Users aria-hidden="true" size={16} />
+            Kelola Kelas
+          </Link>
+        }
+      />
       <SchoolForm
         action={updateSchool.bind(null, school.id)}
         initial={{ name: school.name, slug: school.slug }}

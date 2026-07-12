@@ -30,10 +30,28 @@ model School {
   name      String // "SMAN 1 CIWARINGIN"
   slug      String          @unique // "CIWARINGIN26" — used in the tiny.cc URL pattern
   events    PsikotesEvent[]
+  kelas     Kelas[]
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
   @@index([name])
+}
+
+// Persists across test events/years, same as School itself — not tied to a
+// specific PsikotesEvent. `tester` is a free-text PIC name, unrelated to the
+// TESTER account role (naming collision, same word different concept — see
+// CLAUDE.md > Domain > Kelas & tester).
+model Kelas {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name      String // free text, e.g. "X-1" — not an enum, schools name kelas differently
+  tester    String? // PIC name; null = not assigned yet
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
 }
 
 // Fixed lookup; seeded once from SUBTEST_TYPES (src/lib/constants.ts).
