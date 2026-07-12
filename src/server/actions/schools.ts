@@ -10,7 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { schoolSchema } from "@/lib/validations";
+import { schoolSchema, kelasNameSchema } from "@/lib/validations";
 import { requireStaff } from "@/lib/auth-guard";
 
 export interface SchoolActionState {
@@ -27,13 +27,15 @@ function isDuplicateSlug(e: unknown): boolean {
 }
 
 function revalidateSchoolPaths() {
-  revalidatePath("/admin/sekolah");
+  revalidatePath("/sekolah");
 }
 
 /**
- * kelasCount (BE-G4) is a bulk-create shortcut, not a School field — it never
- * gets passed to prisma.school.create/update directly, always destructured
- * out first so an extra key never reaches a Prisma call that doesn't expect it.
+ * Kelas can be named right here at creation (FE-M3, revised) — the form
+ * submits one `kelasName` field per row. Each is trimmed and blanks dropped,
+ * so an accidental empty row never creates a nameless kelas; order follows
+ * the submitted order. Names still stay fully editable later via "Kelola
+ * Kelas". Absent entirely = create no kelas.
  */
 export async function createSchool(
   _prevState: SchoolActionState | undefined,
@@ -45,7 +47,6 @@ export async function createSchool(
   const parsed = schoolSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
-    kelasCount: formData.get("kelasCount") || undefined,
     driveRawSheetId: formData.get("driveRawSheetId") ?? undefined,
   });
   if (!parsed.success) {
@@ -53,16 +54,25 @@ export async function createSchool(
     return { fieldErrors: { name: f.name?.[0], slug: f.slug?.[0] } };
   }
 
-  const { name, slug, kelasCount, driveRawSheetId } = parsed.data;
+  const { name, slug, driveRawSheetId } = parsed.data;
+
+  // Parse the kelas name rows, dropping blanks. Cap at 50, same ceiling the
+  // old count-based field enforced.
+  const kelasNames = formData
+    .getAll("kelasName")
+    .map((v) => (typeof v === "string" ? kelasNameSchema.safeParse(v) : null))
+    .filter((r): r is { success: true; data: string } => Boolean(r?.success))
+    .map((r) => r.data)
+    .slice(0, 50);
 
   try {
     await prisma.$transaction(async (tx) => {
       const school = await tx.school.create({ data: { name, slug, driveRawSheetId } });
-      if (kelasCount && kelasCount > 0) {
+      if (kelasNames.length > 0) {
         await tx.kelas.createMany({
-          data: Array.from({ length: kelasCount }, (_, i) => ({
+          data: kelasNames.map((kelasName, i) => ({
             schoolId: school.id,
-            name: `Kelas ${i + 1}`,
+            name: kelasName,
             order: i,
           })),
         });

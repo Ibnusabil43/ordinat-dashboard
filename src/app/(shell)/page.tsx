@@ -47,7 +47,7 @@ export default async function OverviewPage() {
                 return (
                   <Link
                     key={e.id}
-                    href={`/admin/jadwal/${e.id}`}
+                    href={`/jadwal/${e.id}`}
                     className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 sm:flex-row sm:items-center sm:justify-between sm:p-6"
                   >
                     <div>

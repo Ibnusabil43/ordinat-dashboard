@@ -22,28 +22,28 @@ import { signOutAction } from "@/server/actions/auth";
 import type { Role } from "@/lib/roles";
 
 const MENU: { href: string; label: string; icon: LucideIcon; roles: Role[] }[] = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard, roles: ["ADMIN", "PIC_LAPANGAN"] },
+  { href: "/", label: "Overview", icon: LayoutDashboard, roles: ["ADMIN", "PIC_LAPANGAN"] },
   {
-    href: "/admin/sekolah",
+    href: "/sekolah",
     label: "Manajemen Sekolah",
     icon: School,
     roles: ["ADMIN", "PIC_LAPANGAN"],
   },
   {
-    href: "/admin/jadwal",
+    href: "/jadwal",
     label: "Manajemen Jadwal",
     icon: CalendarDays,
     roles: ["ADMIN", "PIC_LAPANGAN"],
   },
-  { href: "/admin/rekap", label: "Menu Rekap", icon: ClipboardList, roles: ["ADMIN"] },
+  { href: "/rekap", label: "Menu Rekap", icon: ClipboardList, roles: ["ADMIN"] },
   {
-    href: "/admin/automated-recap",
+    href: "/automated-recap",
     label: "Automated Recap",
     icon: FileSpreadsheet,
     roles: ["ADMIN"],
   },
   {
-    href: "/admin/monitoring",
+    href: "/monitoring",
     label: "Monitoring",
     icon: Activity,
     roles: ["ADMIN", "PIC_LAPANGAN", "TESTER"],
@@ -60,14 +60,14 @@ const DASHBOARD_TITLE: Record<Role, string> = {
  * Desktop: fixed left sidebar. Mobile: top bar + drawer. Spec: DESIGN.md §6.
  * Shared shell for all 3 roles — including TESTER, who just sees a menu
  * filtered down to "Monitoring" (the only page they're allowed on; every
- * other /admin/* path still bounces them back server-side, middleware.ts).
+ * other path still bounces them back server-side, middleware.ts).
  */
 export function Sidebar({ username, role }: { username: string; role: Role }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   const menu = MENU.filter((item) => item.roles.includes(role));
 

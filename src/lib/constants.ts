@@ -32,6 +32,20 @@ export const SUBTEST_TYPES: readonly SubtestType[] = [
 export const SUBTEST_CODES = SUBTEST_TYPES.map((s) => s.code);
 
 /**
+ * Resolves a PsikotesEvent's `activeSubtests` column to the actual subtest
+ * list, in canonical order. CONVENTION (see schema.prisma): an empty array
+ * means "all 12" — that's how existing rows (defaulted to []) and events
+ * where every subtest is active both behave, so callers never special-case
+ * the unconfigured state. Unknown codes are ignored defensively.
+ */
+export function resolveActiveSubtests(codes: readonly string[]): readonly SubtestType[] {
+  if (codes.length === 0) return SUBTEST_TYPES;
+  const active = new Set(codes);
+  const filtered = SUBTEST_TYPES.filter((s) => active.has(s.code));
+  return filtered.length > 0 ? filtered : SUBTEST_TYPES;
+}
+
+/**
  * Contoh pola URL tiny.cc: http://tiny.cc/{SLUG}-{CODE}
  * mis. slug "CIWARINGIN26" + code "EPPS" -> http://tiny.cc/CIWARINGIN26-EPPS
  * Ini hanya saran default saat admin membuat link; URL final tetap bebas diedit.

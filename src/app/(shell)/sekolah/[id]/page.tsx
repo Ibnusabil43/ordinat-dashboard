@@ -18,7 +18,7 @@ export default async function EditSchoolPage({
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <Link
-        href="/admin/sekolah"
+        href="/sekolah"
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
@@ -29,7 +29,7 @@ export default async function EditSchoolPage({
         description={school.name}
         action={
           <Link
-            href={`/admin/sekolah/${school.id}/kelas`}
+            href={`/sekolah/${school.id}/kelas`}
             className="flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
           >
             <Users aria-hidden="true" size={16} />

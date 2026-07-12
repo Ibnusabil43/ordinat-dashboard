@@ -37,21 +37,26 @@ export async function signIn(
   // middleware.ts, so skip that round-trip and send them straight there.
   const role = roleFromAppMetadata(data.user.app_metadata);
   if (role === "TESTER") {
-    redirect("/admin/monitoring");
+    redirect("/monitoring");
   }
 
   // Honor middleware's ?next= redirect target, but only if it's an internal
-  // /admin path — never redirect to an arbitrary URL from user input.
+  // absolute path — reject protocol-relative ("//evil.com") and external
+  // URLs so user input can't turn this into an open redirect. Default
+  // landing is "/" (Overview) for staff.
   const next = formData.get("next");
   const destination =
-    typeof next === "string" && next.startsWith("/admin") && next !== "/admin/login"
+    typeof next === "string" &&
+    next.startsWith("/") &&
+    !next.startsWith("//") &&
+    next !== "/login"
       ? next
-      : "/admin";
+      : "/";
   redirect(destination);
 }
 
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/admin/login");
+  redirect("/login");
 }

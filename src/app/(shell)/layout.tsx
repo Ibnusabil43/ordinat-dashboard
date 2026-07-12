@@ -7,7 +7,7 @@ import { roleFromAppMetadata } from "@/lib/roles";
  * Shell for every authenticated admin page, all 3 roles alike — including
  * TESTER, whose Sidebar just filters down to "Monitoring" (Sidebar.tsx's
  * MENU array), the only page they're allowed on. Deliberately NOT applied to
- * /admin/login (that route lives outside this route group) — see DESIGN.md
+ * /login (that route lives outside this route group) — see DESIGN.md
  * §11 (login is a bare centered card, no sidebar chrome).
  *
  * middleware.ts already redirects unauthenticated requests (and TESTER

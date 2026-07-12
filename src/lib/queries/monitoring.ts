@@ -7,7 +7,7 @@
  * which callers check for themselves before calling these.
  */
 import { prisma } from "@/lib/prisma";
-import { listSheetTabs, readTabRows } from "@/lib/google-sheets";
+import { listSheetTabs, batchReadTabs } from "@/lib/google-sheets";
 import { matchesName } from "@/lib/name-match";
 
 export interface SubtestSubmissionCount {
@@ -39,6 +39,7 @@ export async function getLatestEventLinks(schoolId: string) {
     where: { schoolId },
     orderBy: { scheduledDate: "desc" },
     select: {
+      activeSubtests: true,
       links: {
         select: {
           url: true,
@@ -47,7 +48,7 @@ export async function getLatestEventLinks(schoolId: string) {
       },
     },
   });
-  return event?.links ?? [];
+  return { links: event?.links ?? [], activeSubtests: event?.activeSubtests ?? [] };
 }
 
 /**
@@ -64,13 +65,15 @@ export async function getSubmissionSummary(schoolId: string): Promise<SubtestSub
   if (!school?.driveRawSheetId) return null;
 
   const tabs = await listSheetTabs(school.driveRawSheetId);
-  return Promise.all(
-    tabs.map(async ({ code, label, tabName }) => {
-      if (!tabName) return { code, label, count: 0 };
-      const rows = await readTabRows(school.driveRawSheetId!, tabName);
-      return { code, label, count: Math.max(rows.length - 1, 0) };
-    }),
+  // One batched read for every matched tab, instead of one call per tab.
+  const rowsByTab = await batchReadTabs(
+    school.driveRawSheetId,
+    tabs.map((t) => t.tabName).filter((n): n is string => Boolean(n)),
   );
+  return tabs.map(({ code, label, tabName }) => {
+    const rows = tabName ? (rowsByTab.get(tabName) ?? []) : [];
+    return { code, label, count: Math.max(rows.length - 1, 0) };
+  });
 }
 
 export interface NameSearchResult {
@@ -98,20 +101,23 @@ export async function searchNameAcrossSheets(
   if (!school?.driveRawSheetId) return null;
 
   const tabs = await listSheetTabs(school.driveRawSheetId);
-  return Promise.all(
-    tabs.map(async ({ code, label, tabName }) => {
-      if (!tabName) return { code, label, found: false, kelas: null };
-      const rows = await readTabRows(school.driveRawSheetId!, tabName);
-      const header = rows[0] ?? [];
-      const nameCol = header.findIndex((h) => h?.trim().toUpperCase() === "NAMA LENGKAP");
-      if (nameCol === -1) return { code, label, found: false, kelas: null };
-      const kelasCol = header.findIndex((h) => h?.trim().toUpperCase() === "KELAS");
-
-      const matchedRow = rows.slice(1).find((row) => matchesName(query, row[nameCol] ?? ""));
-      if (!matchedRow) return { code, label, found: false, kelas: null };
-
-      const kelas = kelasCol !== -1 ? matchedRow[kelasCol]?.trim() || null : null;
-      return { code, label, found: true, kelas };
-    }),
+  // One batched read for every matched tab, instead of one call per tab.
+  const rowsByTab = await batchReadTabs(
+    school.driveRawSheetId,
+    tabs.map((t) => t.tabName).filter((n): n is string => Boolean(n)),
   );
+  return tabs.map(({ code, label, tabName }) => {
+    if (!tabName) return { code, label, found: false, kelas: null };
+    const rows = rowsByTab.get(tabName) ?? [];
+    const header = rows[0] ?? [];
+    const nameCol = header.findIndex((h) => h?.trim().toUpperCase() === "NAMA LENGKAP");
+    if (nameCol === -1) return { code, label, found: false, kelas: null };
+    const kelasCol = header.findIndex((h) => h?.trim().toUpperCase() === "KELAS");
+
+    const matchedRow = rows.slice(1).find((row) => matchesName(query, row[nameCol] ?? ""));
+    if (!matchedRow) return { code, label, found: false, kelas: null };
+
+    const kelas = kelasCol !== -1 ? matchedRow[kelasCol]?.trim() || null : null;
+    return { code, label, found: true, kelas };
+  });
 }

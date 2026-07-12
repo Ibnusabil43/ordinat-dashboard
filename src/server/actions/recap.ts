@@ -24,10 +24,10 @@ export async function triggerRekap(eventId: string): Promise<{ error?: string }>
   const result = await startRekap(eventId, "Automated Recap");
   if (!result.ok) return { error: result.message };
 
-  revalidatePath("/admin/rekap");
-  revalidatePath("/admin/jadwal");
-  revalidatePath(`/admin/jadwal/${eventId}`);
-  revalidatePath("/admin");
+  revalidatePath("/rekap");
+  revalidatePath("/jadwal");
+  revalidatePath(`/jadwal/${eventId}`);
+  revalidatePath("/");
   return {};
 }
 

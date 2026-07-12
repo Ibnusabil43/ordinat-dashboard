@@ -118,15 +118,51 @@ export async function listSheetTabs(spreadsheetId: string): Promise<SheetTabMatc
   }));
 }
 
+/** Quote a tab name for use as an A1 range — names can contain spaces/punctuation. */
+function quoteTabRange(tabName: string): string {
+  return `'${tabName.replace(/'/g, "''")}'`;
+}
+
 /** Every row of one tab (including the header row) — callers slice/skip as needed. */
 export async function readTabRows(spreadsheetId: string, tabName: string): Promise<string[][]> {
   const sheets = sheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    // Sheet names can contain spaces/punctuation — always quote, escaping embedded quotes.
-    range: `'${tabName.replace(/'/g, "''")}'`,
+    range: quoteTabRange(tabName),
   });
   return (res.data.values ?? []) as string[][];
+}
+
+/**
+ * Reads many tabs of one spreadsheet in a SINGLE API call (values.batchGet),
+ * keyed by tab name. This is the perf-critical path for Monitoring: the
+ * naive version did one values.get per tab (up to 12 sequential round-trips
+ * per school, each ~200-500ms) — batchGet collapses that to one request, so
+ * the dominant cost (network latency) is paid once, not per tab. The row
+ * data returned is identical to calling readTabRows on each tab.
+ *
+ * `valueRanges` come back in the same order as the requested ranges, so we
+ * zip them against `tabNames` rather than trusting the echoed range string
+ * (which Google normalizes/re-quotes). A tab with no data maps to [].
+ */
+export async function batchReadTabs(
+  spreadsheetId: string,
+  tabNames: string[],
+): Promise<Map<string, string[][]>> {
+  const result = new Map<string, string[][]>();
+  if (tabNames.length === 0) return result;
+
+  const sheets = sheetsClient();
+  const res = await sheets.spreadsheets.values.batchGet({
+    spreadsheetId,
+    ranges: tabNames.map(quoteTabRange),
+  });
+
+  const valueRanges = res.data.valueRanges ?? [];
+  tabNames.forEach((tabName, i) => {
+    result.set(tabName, (valueRanges[i]?.values ?? []) as string[][]);
+  });
+  return result;
 }
 
 /**

@@ -1,5 +1,28 @@
 import { clsx } from "clsx";
+import { Skeleton } from "@/components/Skeleton";
+import { SUBTEST_TYPES } from "@/lib/constants";
 import type { SubtestSubmissionCount } from "@/lib/queries/monitoring";
+
+/**
+ * Same 12-cell grid shape as SubmissionSummary, shown as the <Suspense>
+ * fallback while the (slow) Google Sheets read streams in — the page shell,
+ * tabs, and everything else paint immediately instead of blocking on it.
+ */
+export function SubmissionSummarySkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {SUBTEST_TYPES.map((s) => (
+        <div key={s.code} className="rounded-2xl border border-zinc-200 bg-white p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-6" />
+          </div>
+          <Skeleton className="mt-2 h-1.5 w-full rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /**
  * Zinc-intensity ramp — same convention as ResultsSummary.tsx's per-Gugus

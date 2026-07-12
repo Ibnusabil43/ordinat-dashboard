@@ -11,7 +11,7 @@ export default async function NewEventPage() {
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <Link
-        href="/admin/jadwal"
+        href="/jadwal"
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
@@ -22,7 +22,7 @@ export default async function NewEventPage() {
         action={createEvent}
         schools={schools}
         submitLabel="Simpan"
-        successRedirect="/admin/jadwal"
+        successRedirect="/jadwal"
       />
     </div>
   );

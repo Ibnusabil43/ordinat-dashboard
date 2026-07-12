@@ -13,9 +13,6 @@ export const schoolSchema = z.object({
     .trim()
     .toUpperCase()
     .regex(/^[A-Z0-9-]+$/, "Slug hanya boleh huruf, angka, dan tanda '-'"),
-  // Bulk-create shortcut only (BE-G4) — not persisted as its own field, just
-  // creates N empty Kelas rows alongside the school. Absent/0 = create none.
-  kelasCount: z.coerce.number().int().min(0).max(50).optional(),
   // Persisted School column (BE-L1) — the ID of the one spreadsheet with 12
   // tabs Monitoring reads from. Empty string means "not set", same as null.
   driveRawSheetId: z
