@@ -1,11 +1,15 @@
 /**
- * 12 jenis subtes psikotes.
+ * 13 jenis subtes psikotes.
  *
  * PENTING: `code` HARUS sama persis dengan nama sheet di file RAW yang diproses
  * oleh Automated Recap (Flask). Mengubah kode di sini tanpa menyamakan dengan
  * tool rekap akan memutus pencocokan skor. Lihat CLAUDE.md > Integrasi.
  *
  * `order` menentukan urutan tampil di grid link & form manajemen link.
+ *
+ * PAPI tidak selalu dipakai di setiap sekolah/event — itu bukan masalah, link
+ * dan sheet RAW sama-sama sudah menerima kode tanpa isi (LinkTable menampilkan
+ * "Belum tersedia", Monitoring menghitung 0 kalau tab-nya tidak ada).
  */
 
 export interface SubtestType {
@@ -27,22 +31,38 @@ export const SUBTEST_TYPES: readonly SubtestType[] = [
   { code: "ME", label: "ME", order: 10 },
   { code: "RIASEC", label: "RIASEC", order: 11 },
   { code: "GB", label: "Gaya Belajar", order: 12 },
+  { code: "PAPI", label: "PAPI", order: 13 },
 ] as const;
 
 export const SUBTEST_CODES = SUBTEST_TYPES.map((s) => s.code);
 
 /**
- * Resolves a PsikotesEvent's `activeSubtests` column to the actual subtest
- * list, in canonical order. CONVENTION (see schema.prisma): an empty array
- * means "all 12" — that's how existing rows (defaulted to []) and events
- * where every subtest is active both behave, so callers never special-case
- * the unconfigured state. Unknown codes are ignored defensively.
+ * Resolves a School's `activeSubtests` column to the actual subtest list, in
+ * canonical order. CONVENTION (see schema.prisma): an empty array means
+ * "all 13" — that's how existing rows (defaulted to []) and schools where
+ * every subtest is active both behave, so callers never special-case the
+ * unconfigured state. Unknown codes are ignored defensively.
  */
 export function resolveActiveSubtests(codes: readonly string[]): readonly SubtestType[] {
   if (codes.length === 0) return SUBTEST_TYPES;
   const active = new Set(codes);
   const filtered = SUBTEST_TYPES.filter((s) => active.has(s.code));
   return filtered.length > 0 ? filtered : SUBTEST_TYPES;
+}
+
+/**
+ * Parses the checked subtest codes from a "subtest" checkbox group (one
+ * `subtest` field per checked box) into School.activeSubtests, keeping only
+ * known codes in canonical order. Selecting all 13 (or none) collapses to []
+ * — the "all 13" convention above — so the common case leaves the column
+ * empty and only a genuine subset is stored explicitly.
+ */
+export function parseActiveSubtests(formData: FormData): string[] {
+  const checked = new Set(
+    formData.getAll("subtest").filter((v): v is string => typeof v === "string"),
+  );
+  const selected = SUBTEST_CODES.filter((code) => checked.has(code));
+  return selected.length === SUBTEST_CODES.length ? [] : selected;
 }
 
 /**
@@ -82,3 +102,34 @@ export function authEmailToUsername(email: string): string {
  * surfaces in Overview's "needs attention" list (BE-F2).
  */
 export const REKAP_ATTENTION_THRESHOLD_DAYS = 3;
+
+/**
+ * Display names for `Kelas.tester` (PIC_LAPANGAN + TESTER-role staff — the
+ * people who actually proctor a kelas on-site). Deliberately just the human
+ * name, never the login username — `Kelas.tester` is unrelated to the
+ * TESTER account role and must not be confused with it (CLAUDE.md > Domain
+ * > Kelas & tester). ADMIN staff aren't included; they don't proctor.
+ * Populates the dropdown in KelasManager — add a name here when a new
+ * field PIC/tester joins.
+ */
+export const KNOWN_TESTER_NAMES: readonly string[] = [
+  "Achmad Fauzan Dwi Putra, S.Psi",
+  "Alya Rachmasari, S.Psi.",
+  "Assyifa Nur Rumaisha, S.Psi",
+  "Dhefi Dwicahyani Fikri, S.Psi",
+  "Farah Fauziyah, S.Psi., M.A.",
+  "Ghina Devina Xaviera, M.Psi., Psikolog",
+  "Gina Safitri Rachmatillah, S.Psi",
+  "Helma Fitria Hendra, S.Psi",
+  "Muhamad Noviyanto Margono, S.Psi., M.M.",
+  "Nazilatul Fakhirah, S.Psi.",
+  "Nisya Nur Alfilail, S.Psi",
+  "Risma Santika, S.Psi",
+  "Roseyoana Logisian Subekti, S.Psi., Gr.",
+  "Sheila Aisma Nurbillah, M.Psi.,Psikolog",
+  "Syifa Fauziyyah Hendra, S.Psi",
+  "Tanthie Eka Ratnasari, S.Psi",
+  "Tifa Kamila, S.Psi",
+  "Wulan Tresna Kusumah, S.Psi.",
+  "Yuniar Noor Fitriyanti, S.Psi",
+] as const;

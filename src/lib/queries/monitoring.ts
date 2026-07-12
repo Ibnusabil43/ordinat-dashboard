@@ -39,7 +39,6 @@ export async function getLatestEventLinks(schoolId: string) {
     where: { schoolId },
     orderBy: { scheduledDate: "desc" },
     select: {
-      activeSubtests: true,
       links: {
         select: {
           url: true,
@@ -48,7 +47,7 @@ export async function getLatestEventLinks(schoolId: string) {
       },
     },
   });
-  return { links: event?.links ?? [], activeSubtests: event?.activeSubtests ?? [] };
+  return event?.links ?? [];
 }
 
 /**

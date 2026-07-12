@@ -33,12 +33,12 @@ export async function getEventById(id: string) {
       id: true,
       scheduledDate: true,
       status: true,
-      activeSubtests: true,
       school: {
         select: {
           id: true,
           name: true,
           slug: true,
+          activeSubtests: true,
           kelas: {
             orderBy: { order: "asc" },
             select: { id: true, name: true, tester: true },

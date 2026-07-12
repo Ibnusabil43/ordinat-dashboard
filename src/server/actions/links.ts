@@ -27,16 +27,16 @@ export async function upsertSubtestLinks(
   const guard = await requireAdmin();
   if ("error" in guard) return { error: guard.error };
 
-  // Only touch this event's active subtests — the form only renders those,
+  // Only touch this school's active subtests — the form only renders those,
   // and a subtest that was deactivated should keep whatever link it had
   // rather than being silently wiped by an absent (empty) form field.
   const event = await prisma.psikotesEvent.findUnique({
     where: { id: eventId },
-    select: { activeSubtests: true },
+    select: { school: { select: { activeSubtests: true } } },
   });
   if (!event) return { error: "Jadwal tidak ditemukan." };
 
-  const links = resolveActiveSubtests(event.activeSubtests).map(({ code }) => ({
+  const links = resolveActiveSubtests(event.school.activeSubtests).map(({ code }) => ({
     code,
     url: (formData.get(`url_${code}`) as string | null)?.trim() ?? "",
   }));

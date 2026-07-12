@@ -35,6 +35,16 @@ model School {
   // recap results all go to one shared folder (GOOGLE_DRIVE_RESULTS_FOLDER_ID
   // env var), distinguished by filename instead. See CLAUDE.md > Domain.
   driveRawSheetId String?
+  // Subtest codes this school actually runs (defaults to all 13, EPPS→PAPI).
+  // CONVENTION: an empty array means "all 13" (unconfigured) — so existing
+  // rows need no backfill and resolveActiveSubtests() maps [] → the full set.
+  // A school-level setting, not per-event — which subtests a school runs
+  // doesn't change year to year, so every PsikotesEvent for this school
+  // shares it. Drives which subtest link slots show in Manajemen Link + the
+  // Link Subtes/Monitoring views; Monitoring's submission summary is
+  // unaffected (it reads the raw sheet's physical tabs, a different axis).
+  // See src/lib/constants.ts.
+  activeSubtests  String[]        @default([])
   events          PsikotesEvent[]
   kelas           Kelas[]
   createdAt       DateTime        @default(now())
@@ -79,13 +89,6 @@ model PsikotesEvent {
   links             SubtestLink[]
   recapJobs         RecapJob[]
   createdById       String? // auth.users.id (Supabase) of the admin who created this event — no FK, cross-schema
-  // Subtest codes this event actually runs (defaults to all 12, EPPS→GB).
-  // CONVENTION: an empty array means "all 12" (unconfigured) — so existing
-  // rows need no backfill and resolveActiveSubtests() maps [] → the full set.
-  // Drives which subtest link slots show in Manajemen Link + the Link Subtes
-  // views; Monitoring's submission summary is unaffected (it reads the raw
-  // sheet's physical tabs, a different axis). See src/lib/constants.ts.
-  activeSubtests    String[]      @default([])
   // Drive file ID of the uploaded recap result (FR-16). Presence means
   // "we've uploaded before" — the next upload updates this file in place
   // (same ID, new content) instead of creating a duplicate. Nullable;

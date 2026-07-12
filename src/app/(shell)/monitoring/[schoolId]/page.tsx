@@ -43,15 +43,15 @@ export default async function SchoolMonitoringPage({
   const school = await getSchoolById(schoolId);
   if (!school) notFound();
 
-  const [eventLinks, kelas] = await Promise.all([
+  const [links, kelas] = await Promise.all([
     getLatestEventLinks(school.id),
     getKelasBySchoolId(school.id),
   ]);
-  // Only the latest event's active subtests (defaults to all 12).
-  const linkRows: LinkRow[] = resolveActiveSubtests(eventLinks.activeSubtests).map((s) => ({
+  // This school's active subtests (defaults to all 13, school-level setting).
+  const linkRows: LinkRow[] = resolveActiveSubtests(school.activeSubtests).map((s) => ({
     code: s.code,
     label: s.label,
-    url: eventLinks.links.find((l) => l.subtestType.code === s.code)?.url ?? null,
+    url: links.find((l) => l.subtestType.code === s.code)?.url ?? null,
   }));
 
   return (

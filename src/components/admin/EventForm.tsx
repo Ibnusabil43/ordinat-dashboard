@@ -5,7 +5,6 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { eventSchema } from "@/lib/validations";
-import { SUBTEST_TYPES, resolveActiveSubtests } from "@/lib/constants";
 import type { SchoolOption } from "@/lib/queries/schools";
 import type { EventActionState } from "@/server/actions/events";
 
@@ -42,7 +41,7 @@ export function EventForm({
 }: {
   action: Action;
   schools: SchoolOption[];
-  initial?: { schoolId: string; scheduledDate: string; activeSubtests?: string[] };
+  initial?: { schoolId: string; scheduledDate: string };
   submitLabel: string;
   successRedirect: string;
   cancelHref?: string;
@@ -51,17 +50,6 @@ export function EventForm({
   const [schoolId, setSchoolId] = useState(initial?.schoolId ?? "");
   const [scheduledDate, setScheduledDate] = useState(initial?.scheduledDate ?? "");
   const [touched, setTouched] = useState<{ schoolId?: boolean; scheduledDate?: boolean }>({});
-  // Active subtests — defaults to all 12 (resolveActiveSubtests maps [] → all).
-  const [activeSubtests, setActiveSubtests] = useState<Set<string>>(
-    () => new Set(resolveActiveSubtests(initial?.activeSubtests ?? []).map((s) => s.code)),
-  );
-  const toggleSubtest = (code: string) =>
-    setActiveSubtests((prev) => {
-      const next = new Set(prev);
-      if (next.has(code)) next.delete(code);
-      else next.add(code);
-      return next;
-    });
 
   const [state, formAction] = useActionState(
     async (prev: EventActionState | undefined, fd: FormData) => {
@@ -135,35 +123,6 @@ export function EventForm({
           className={inputClass(!!dateError)}
         />
         {dateError && <p className="mt-1 text-xs text-red-600">{dateError}</p>}
-      </div>
-
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-900">Subtes</label>
-        <p className="mb-2 text-xs text-zinc-500">
-          Default semua (EPPS–Gaya Belajar). Hilangkan centang subtes yang tidak dipakai sekolah ini —
-          hanya subtes tercentang yang punya slot link.
-        </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {SUBTEST_TYPES.map((s) => {
-            const checked = activeSubtests.has(s.code);
-            return (
-              <label
-                key={s.code}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 transition hover:bg-zinc-50"
-              >
-                <input
-                  type="checkbox"
-                  name="subtest"
-                  value={s.code}
-                  checked={checked}
-                  onChange={() => toggleSubtest(s.code)}
-                  className="h-4 w-4 accent-zinc-900"
-                />
-                <span className="truncate">{s.label}</span>
-              </label>
-            );
-          })}
-        </div>
       </div>
 
       {state?.error && <p className="text-xs text-red-600">{state.error}</p>}

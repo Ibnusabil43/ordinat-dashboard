@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, X } from "lucide-react";
 import { schoolSchema } from "@/lib/validations";
+import { SUBTEST_TYPES, resolveActiveSubtests } from "@/lib/constants";
 import type { SchoolActionState } from "@/server/actions/schools";
 
 type Action = (
@@ -40,7 +41,12 @@ export function SchoolForm({
   submitLabel,
 }: {
   action: Action;
-  initial?: { name: string; slug: string; driveRawSheetId?: string | null };
+  initial?: {
+    name: string;
+    slug: string;
+    driveRawSheetId?: string | null;
+    activeSubtests?: string[];
+  };
   submitLabel: string;
 }) {
   const router = useRouter();
@@ -49,6 +55,17 @@ export function SchoolForm({
   const [touched, setTouched] = useState<{ name?: boolean; slug?: boolean }>({});
   // Create-only: named kelas rows, each editable (defaults to "Kelas N").
   const [kelasNames, setKelasNames] = useState<string[]>([]);
+  // Active subtests — defaults to all 13 (resolveActiveSubtests maps [] → all).
+  const [activeSubtests, setActiveSubtests] = useState<Set<string>>(
+    () => new Set(resolveActiveSubtests(initial?.activeSubtests ?? []).map((s) => s.code)),
+  );
+  const toggleSubtest = (code: string) =>
+    setActiveSubtests((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
 
   const addKelas = () => setKelasNames((k) => [...k, `Kelas ${k.length + 1}`]);
   const removeKelas = (idx: number) => setKelasNames((k) => k.filter((_, i) => i !== idx));
@@ -182,6 +199,35 @@ export function SchoolForm({
           ID spreadsheet Google Sheets RAW sekolah ini (12 tab, satu per subtes) — dipakai Monitoring.
           Salin dari URL spreadsheet-nya, bagian setelah <span className="font-mono">/d/</span>.
         </p>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-zinc-900">Subtes</label>
+        <p className="mb-2 text-xs text-zinc-500">
+          Default semua (EPPS–PAPI). Hilangkan centang subtes yang tidak dipakai sekolah ini — berlaku
+          untuk semua jadwal sekolah ini, hanya subtes tercentang yang punya slot link.
+        </p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {SUBTEST_TYPES.map((s) => {
+            const checked = activeSubtests.has(s.code);
+            return (
+              <label
+                key={s.code}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 transition hover:bg-zinc-50"
+              >
+                <input
+                  type="checkbox"
+                  name="subtest"
+                  value={s.code}
+                  checked={checked}
+                  onChange={() => toggleSubtest(s.code)}
+                  className="h-4 w-4 accent-zinc-900"
+                />
+                <span className="truncate">{s.label}</span>
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       {state?.error && <p className="text-xs text-red-600">{state.error}</p>}

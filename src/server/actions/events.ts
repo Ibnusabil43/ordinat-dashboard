@@ -13,26 +13,10 @@ import { eventSchema } from "@/lib/validations";
 import { assertTransition } from "@/lib/status";
 import { requireStaff, requireAdmin } from "@/lib/auth-guard";
 import { revalidateEventPaths } from "@/lib/event-paths";
-import { SUBTEST_CODES } from "@/lib/constants";
 
 export interface EventActionState {
   error?: string;
   fieldErrors?: { schoolId?: string; scheduledDate?: string };
-}
-
-/**
- * Parses the checked subtest codes from the event form (one `subtest` field
- * per checked box), keeping only known codes in canonical order. Selecting
- * all 12 (or none) collapses to [] — the "all 12" convention (schema.prisma /
- * resolveActiveSubtests) — so the common case leaves the column empty and
- * only a genuine subset is stored explicitly.
- */
-function parseActiveSubtests(formData: FormData): string[] {
-  const checked = new Set(
-    formData.getAll("subtest").filter((v): v is string => typeof v === "string"),
-  );
-  const selected = SUBTEST_CODES.filter((code) => checked.has(code));
-  return selected.length === SUBTEST_CODES.length ? [] : selected;
 }
 
 function parseEvent(formData: FormData) {
@@ -61,7 +45,7 @@ export async function createEvent(
   try {
     // status defaults to SCHEDULED in the schema — not set here on purpose.
     await prisma.psikotesEvent.create({
-      data: { ...parsed.data, activeSubtests: parseActiveSubtests(formData) },
+      data: parsed.data,
     });
   } catch {
     return { error: "Gagal menyimpan jadwal. Coba lagi." };
@@ -83,10 +67,10 @@ export async function updateEvent(
   if (!parsed.success) return fieldErrorsFrom(parsed);
 
   try {
-    // Only schoolId + scheduledDate + activeSubtests change here; status is untouched.
+    // Only schoolId + scheduledDate change here; status is untouched.
     await prisma.psikotesEvent.update({
       where: { id },
-      data: { ...parsed.data, activeSubtests: parseActiveSubtests(formData) },
+      data: parsed.data,
     });
     revalidateEventPaths({ id });
   } catch {

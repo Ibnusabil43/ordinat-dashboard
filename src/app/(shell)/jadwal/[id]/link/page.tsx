@@ -42,7 +42,7 @@ export default async function LinkManagementPage({
         action={upsertSubtestLinks.bind(null, event.id)}
         slug={event.school.slug}
         existing={existing}
-        subtests={resolveActiveSubtests(event.activeSubtests)}
+        subtests={resolveActiveSubtests(event.school.activeSubtests)}
       />
     </div>
   );

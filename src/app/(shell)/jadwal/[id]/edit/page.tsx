@@ -44,7 +44,6 @@ export default async function EditEventPage({
         initial={{
           schoolId: event.school.id,
           scheduledDate: toDateInputValue(event.scheduledDate),
-          activeSubtests: event.activeSubtests,
         }}
         submitLabel="Simpan Perubahan"
         successRedirect={`/jadwal/${id}`}

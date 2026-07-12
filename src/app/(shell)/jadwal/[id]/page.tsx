@@ -23,9 +23,9 @@ export default async function EventDetailPage({
   const [event, role] = await Promise.all([getEventById(id), getCurrentRole()]);
   if (!event) notFound();
 
-  // Only this event's active subtests (defaults to all 12); merged with the
-  // event's saved links in canonical order.
-  const linkRows: LinkRow[] = resolveActiveSubtests(event.activeSubtests).map((s) => ({
+  // This school's active subtests (defaults to all 13, school-level setting);
+  // merged with the event's saved links in canonical order.
+  const linkRows: LinkRow[] = resolveActiveSubtests(event.school.activeSubtests).map((s) => ({
     code: s.code,
     label: s.label,
     url: event.links.find((l) => l.subtestType.code === s.code)?.url ?? null,

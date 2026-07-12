@@ -12,6 +12,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { schoolSchema, kelasNameSchema } from "@/lib/validations";
 import { requireStaff } from "@/lib/auth-guard";
+import { parseActiveSubtests } from "@/lib/constants";
 
 export interface SchoolActionState {
   error?: string;
@@ -65,9 +66,13 @@ export async function createSchool(
     .map((r) => r.data)
     .slice(0, 50);
 
+  const activeSubtests = parseActiveSubtests(formData);
+
   try {
     await prisma.$transaction(async (tx) => {
-      const school = await tx.school.create({ data: { name, slug, driveRawSheetId } });
+      const school = await tx.school.create({
+        data: { name, slug, driveRawSheetId, activeSubtests },
+      });
       if (kelasNames.length > 0) {
         await tx.kelas.createMany({
           data: kelasNames.map((kelasName, i) => ({
@@ -114,6 +119,7 @@ export async function updateSchool(
         name: parsed.data.name,
         slug: parsed.data.slug,
         driveRawSheetId: parsed.data.driveRawSheetId,
+        activeSubtests: parseActiveSubtests(formData),
       },
     });
   } catch (e) {
