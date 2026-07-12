@@ -16,13 +16,15 @@ export interface SubtestSubmissionCount {
   count: number;
 }
 
-/** Lean {id, name, driveRawSheetId} list for the Monitoring school grid (FE-P1) — not the full getSchools() shape, nothing else needed here. */
+/** Lean {id, name, driveRawSheetId} list for the Monitoring school list (FE-P1) — not the full getSchools() shape, nothing else needed here. */
 export async function getSchoolsForMonitoring() {
   return prisma.school.findMany({
     orderBy: { name: "asc" },
     select: { id: true, name: true, driveRawSheetId: true },
   });
 }
+
+export type SchoolForMonitoring = Awaited<ReturnType<typeof getSchoolsForMonitoring>>[number];
 
 /**
  * Subtest links for a school's most recent event — the "Link" tab on the
