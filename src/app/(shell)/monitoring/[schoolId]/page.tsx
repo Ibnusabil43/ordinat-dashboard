@@ -12,6 +12,7 @@ import {
   SubmissionSummarySkeleton,
 } from "@/components/admin/monitoring/SubmissionSummary";
 import { NameCheck } from "@/components/admin/monitoring/NameCheck";
+import { RefreshDataButton } from "@/components/admin/monitoring/RefreshDataButton";
 import { Tabs } from "@/components/Tabs";
 import { LinkTable, type LinkRow } from "@/components/LinkTable";
 import { TesterTable } from "@/components/TesterTable";
@@ -64,7 +65,11 @@ export default async function SchoolMonitoringPage({
         Kembali
       </Link>
 
-      <PageHeader title={school.name} description="Ringkasan submisi psikotes." />
+      <PageHeader
+        title={school.name}
+        description="Ringkasan submisi psikotes."
+        action={school.driveRawSheetId ? <RefreshDataButton /> : undefined}
+      />
 
       {!school.driveRawSheetId ? (
         <EmptyState
