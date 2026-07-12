@@ -79,10 +79,13 @@ export function NameCheck({ schoolId }: { schoolId: string }) {
               type="button"
               onClick={() => lastQuery && runSearch(lastQuery)}
               disabled={pending}
-              className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-zinc-600 transition hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+              className={clsx(
+                "flex shrink-0 items-center gap-1.5 text-xs font-medium transition",
+                pending ? "cursor-not-allowed text-zinc-300" : "cursor-pointer text-zinc-600 hover:text-zinc-900",
+              )}
             >
               <RefreshCw aria-hidden="true" size={12} className={clsx(pending && "animate-spin")} />
-              Search Again
+              {pending ? "Searching..." : "Search Again"}
             </button>
           </div>
           <div className="flex flex-col gap-1.5">
