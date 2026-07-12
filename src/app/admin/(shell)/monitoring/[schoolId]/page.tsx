@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { getSchoolById } from "@/lib/queries/schools";
 import { getSubmissionSummary, getLatestEventLinks } from "@/lib/queries/monitoring";
+import { getKelasBySchoolId } from "@/lib/queries/kelas";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { SubmissionSummary } from "@/components/admin/monitoring/SubmissionSummary";
 import { NameCheck } from "@/components/admin/monitoring/NameCheck";
 import { Tabs } from "@/components/Tabs";
 import { LinkTable, type LinkRow } from "@/components/LinkTable";
+import { TesterTable } from "@/components/TesterTable";
 import { CopyLinksButton } from "@/components/CopyLinksButton";
 import { SUBTEST_TYPES } from "@/lib/constants";
 import { buildLinkCopyText } from "@/lib/format";
@@ -19,11 +21,14 @@ import { buildLinkCopyText } from "@/lib/format";
  * "Sheets fetch failed" which only surfaces once getSubmissionSummary
  * actually tries and throws — different problems, different messages.
  *
- * "Link" + "Cek Nama" tabs below the summary — TESTER can't reach Event
- * Detail (ADMIN/PIC_LAPANGAN only), so the Link tab is this role's only way
- * to see subtest links at all. Deliberately independent of driveRawSheetId
- * — a school missing its raw sheet shouldn't also lose link visibility,
- * the two features don't depend on each other.
+ * "Link" + "Cek Nama" + "Kelas & Tester" tabs below the summary — TESTER
+ * can't reach Event Detail or the Sekolah > Kelas page (both ADMIN/
+ * PIC_LAPANGAN only), so Monitoring is this role's only way to see subtest
+ * links AND kelas/tester assignments at all. "Kelas & Tester" is
+ * deliberately read-only here (reuses the same TesterTable as Event
+ * Detail's own Tester tab) — editing stays on Sekolah > Kelas, whose
+ * server actions require requireStaff() and would just error for TESTER.
+ * Independent of driveRawSheetId, same reasoning as Link.
  */
 export default async function SchoolMonitoringPage({
   params,
@@ -34,7 +39,10 @@ export default async function SchoolMonitoringPage({
   const school = await getSchoolById(schoolId);
   if (!school) notFound();
 
-  const eventLinks = await getLatestEventLinks(school.id);
+  const [eventLinks, kelas] = await Promise.all([
+    getLatestEventLinks(school.id),
+    getKelasBySchoolId(school.id),
+  ]);
   const linkRows: LinkRow[] = SUBTEST_TYPES.map((s) => ({
     code: s.code,
     label: s.label,
@@ -94,6 +102,15 @@ export default async function SchoolMonitoringPage({
                   title="Sheet RAW belum diatur"
                   description="Cek Nama butuh Drive Raw Sheet ID — atur di halaman Manajemen Sekolah."
                   className="py-6"
+                />
+              ),
+            },
+            {
+              key: "kelas-tester",
+              label: "Kelas & Tester",
+              content: (
+                <TesterTable
+                  rows={kelas.map((k) => ({ id: k.id, kelas: k.name, tester: k.tester }))}
                 />
               ),
             },
