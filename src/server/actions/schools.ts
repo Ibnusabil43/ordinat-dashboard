@@ -49,13 +49,14 @@ export async function createSchool(
     name: formData.get("name"),
     slug: formData.get("slug"),
     driveRawSheetId: formData.get("driveRawSheetId") ?? undefined,
+    driveFormFolderId: formData.get("driveFormFolderId") ?? undefined,
   });
   if (!parsed.success) {
     const f = parsed.error.flatten().fieldErrors;
     return { fieldErrors: { name: f.name?.[0], slug: f.slug?.[0] } };
   }
 
-  const { name, slug, driveRawSheetId } = parsed.data;
+  const { name, slug, driveRawSheetId, driveFormFolderId } = parsed.data;
 
   // Parse the kelas name rows, dropping blanks. Cap at 50, same ceiling the
   // old count-based field enforced.
@@ -71,7 +72,7 @@ export async function createSchool(
   try {
     await prisma.$transaction(async (tx) => {
       const school = await tx.school.create({
-        data: { name, slug, driveRawSheetId, activeSubtests },
+        data: { name, slug, driveRawSheetId, driveFormFolderId, activeSubtests },
       });
       if (kelasNames.length > 0) {
         await tx.kelas.createMany({
@@ -104,6 +105,7 @@ export async function updateSchool(
     name: formData.get("name"),
     slug: formData.get("slug"),
     driveRawSheetId: formData.get("driveRawSheetId") ?? undefined,
+    driveFormFolderId: formData.get("driveFormFolderId") ?? undefined,
   });
   if (!parsed.success) {
     const f = parsed.error.flatten().fieldErrors;
@@ -119,6 +121,7 @@ export async function updateSchool(
         name: parsed.data.name,
         slug: parsed.data.slug,
         driveRawSheetId: parsed.data.driveRawSheetId,
+        driveFormFolderId: parsed.data.driveFormFolderId,
         activeSubtests: parseActiveSubtests(formData),
       },
     });

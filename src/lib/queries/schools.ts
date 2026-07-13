@@ -34,7 +34,14 @@ export type SchoolListItem = Awaited<ReturnType<typeof getSchools>>[number];
 export async function getSchoolById(id: string) {
   return prisma.school.findUnique({
     where: { id },
-    select: { id: true, name: true, slug: true, driveRawSheetId: true, activeSubtests: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      driveRawSheetId: true,
+      driveFormFolderId: true,
+      activeSubtests: true,
+    },
   });
 }
 

@@ -21,8 +21,16 @@ import { google } from "googleapis";
 import { SUBTEST_TYPES } from "@/lib/constants";
 
 const SHEETS_READONLY_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
+// Read-only, used by google-forms-check.ts's "Cek Link" feature — listing a
+// school's form folder (metadata only, no file content) and reading each
+// form's public responder URL. Bundled into this same JWT since it's the
+// same service account/credentials; scopes just say what it's authorized
+// for, so adding these doesn't widen who can act as it.
+const DRIVE_METADATA_READONLY_SCOPE = "https://www.googleapis.com/auth/drive.metadata.readonly";
+const FORMS_BODY_READONLY_SCOPE = "https://www.googleapis.com/auth/forms.body.readonly";
 
-function getServiceAccountAuth() {
+/** Exported for google-forms-check.ts — same service account, shared here so the key-unescaping and missing-env-var error message live in one place. */
+export function getServiceAccountAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const rawKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
   if (!email || !rawKey) {
@@ -34,7 +42,7 @@ function getServiceAccountAuth() {
   return new google.auth.JWT({
     email,
     key: rawKey.replace(/\\n/g, "\n"),
-    scopes: [SHEETS_READONLY_SCOPE],
+    scopes: [SHEETS_READONLY_SCOPE, DRIVE_METADATA_READONLY_SCOPE, FORMS_BODY_READONLY_SCOPE],
   });
 }
 

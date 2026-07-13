@@ -45,6 +45,7 @@ export function SchoolForm({
     name: string;
     slug: string;
     driveRawSheetId?: string | null;
+    driveFormFolderId?: string | null;
     activeSubtests?: string[];
   };
   submitLabel: string;
@@ -192,12 +193,31 @@ export function SchoolForm({
           name="driveRawSheetId"
           type="text"
           defaultValue={initial?.driveRawSheetId ?? ""}
-          placeholder="1E7P6Cj0Hr3dD3fTOK3VFGz85xN6GH-PTd2oacFMQe94"
+          placeholder="Tempel link spreadsheet-nya, atau ID-nya saja"
           className={`${inputClass(false)} font-mono`}
         />
         <p className="mt-1 text-xs text-zinc-500">
-          ID spreadsheet Google Sheets RAW sekolah ini (12 tab, satu per subtes) — dipakai Monitoring.
-          Salin dari URL spreadsheet-nya, bagian setelah <span className="font-mono">/d/</span>.
+          Spreadsheet Google Sheets RAW sekolah ini (12 tab, satu per subtes) — dipakai Monitoring. Tempel
+          link lengkapnya langsung juga bisa, ID-nya otomatis diambil.
+        </p>
+      </div>
+
+      <div>
+        <label htmlFor="driveFormFolderId" className="mb-1.5 block text-sm font-medium text-zinc-900">
+          Drive Form Folder ID <span className="font-normal text-zinc-400">(opsional)</span>
+        </label>
+        <input
+          id="driveFormFolderId"
+          name="driveFormFolderId"
+          type="text"
+          defaultValue={initial?.driveFormFolderId ?? ""}
+          placeholder="Tempel link folder Drive-nya, atau ID-nya saja"
+          className={`${inputClass(false)} font-mono`}
+        />
+        <p className="mt-1 text-xs text-zinc-500">
+          Folder Google Drive berisi semua Google Form subtes sekolah ini — dipakai fitur &ldquo;Cek
+          Link&rdquo; di Manajemen Link buat ngecek link tiny.cc beneran ngarah ke form yang benar. Tempel
+          link folder-nya langsung juga bisa, ID-nya otomatis diambil.
         </p>
       </div>
 

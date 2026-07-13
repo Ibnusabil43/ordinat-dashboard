@@ -42,6 +42,8 @@ export async function getLatestEventLinks(schoolId: string) {
       links: {
         select: {
           url: true,
+          checkStatus: true,
+          checkMessage: true,
           subtestType: { select: { code: true, label: true, order: true } },
         },
       },

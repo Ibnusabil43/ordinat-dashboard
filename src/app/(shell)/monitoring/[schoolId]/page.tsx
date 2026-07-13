@@ -49,11 +49,16 @@ export default async function SchoolMonitoringPage({
     getKelasBySchoolId(school.id),
   ]);
   // This school's active subtests (defaults to all 13, school-level setting).
-  const linkRows: LinkRow[] = resolveActiveSubtests(school.activeSubtests).map((s) => ({
-    code: s.code,
-    label: s.label,
-    url: links.find((l) => l.subtestType.code === s.code)?.url ?? null,
-  }));
+  const linkRows: LinkRow[] = resolveActiveSubtests(school.activeSubtests).map((s) => {
+    const link = links.find((l) => l.subtestType.code === s.code);
+    return {
+      code: s.code,
+      label: s.label,
+      url: link?.url ?? null,
+      checkStatus: link?.checkStatus,
+      checkMessage: link?.checkMessage,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">

@@ -25,11 +25,17 @@ export default async function EventDetailPage({
 
   // This school's active subtests (defaults to all 13, school-level setting);
   // merged with the event's saved links in canonical order.
-  const linkRows: LinkRow[] = resolveActiveSubtests(event.school.activeSubtests).map((s) => ({
-    code: s.code,
-    label: s.label,
-    url: event.links.find((l) => l.subtestType.code === s.code)?.url ?? null,
-  }));
+  const activeSubtests = resolveActiveSubtests(event.school.activeSubtests);
+  const linkRows: LinkRow[] = activeSubtests.map((s) => {
+    const link = event.links.find((l) => l.subtestType.code === s.code);
+    return {
+      code: s.code,
+      label: s.label,
+      url: link?.url ?? null,
+      checkStatus: link?.checkStatus,
+      checkMessage: link?.checkMessage,
+    };
+  });
 
   const testerRows = event.school.kelas.map((k) => ({ id: k.id, kelas: k.name, tester: k.tester }));
 
@@ -67,7 +73,7 @@ export default async function EventDetailPage({
               className="flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
             >
               <Link2 aria-hidden="true" size={16} />
-              Kelola Link ({event._count.links}/12)
+              Kelola Link ({event._count.links}/{activeSubtests.length})
             </Link>
           )}
         </div>

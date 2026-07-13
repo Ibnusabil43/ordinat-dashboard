@@ -5,6 +5,7 @@ import { getEventById } from "@/lib/queries/events";
 import { upsertSubtestLinks } from "@/server/actions/links";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { LinkForm } from "@/components/admin/LinkForm";
+import { CheckLinksPanel } from "@/components/admin/CheckLinksPanel";
 import { formatDateID } from "@/lib/format";
 import { resolveActiveSubtests } from "@/lib/constants";
 import { getCurrentRole } from "@/lib/auth-guard";
@@ -37,6 +38,8 @@ export default async function LinkManagementPage({
         title="Manajemen Link"
         description={`${event.school.name} — ${formatDateID(event.scheduledDate)}`}
       />
+
+      <CheckLinksPanel eventId={event.id} />
 
       <LinkForm
         action={upsertSubtestLinks.bind(null, event.id)}

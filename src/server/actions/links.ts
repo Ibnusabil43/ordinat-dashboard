@@ -69,10 +69,14 @@ export async function upsertSubtestLinks(
           await tx.subtestLink.deleteMany({ where: { eventId, subtestTypeId } });
           continue;
         }
+        // Every save clears the last "Cek Link" result — a stale "match" on
+        // a URL that just changed would be a correctness bug, so we don't
+        // try to detect whether the value actually changed and just always
+        // invalidate. Re-running "Cek Link" is cheap and manual anyway.
         await tx.subtestLink.upsert({
           where: { eventId_subtestTypeId: { eventId, subtestTypeId } },
           create: { eventId, subtestTypeId, url: link.url },
-          update: { url: link.url },
+          update: { url: link.url, checkStatus: null, checkMessage: null, checkedAt: null },
         });
       }
     });
