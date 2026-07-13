@@ -43,6 +43,7 @@ export default async function EditSchoolPage({
           name: school.name,
           slug: school.slug,
           driveRawSheetId: school.driveRawSheetId,
+          driveFormFolderId: school.driveFormFolderId,
           activeSubtests: school.activeSubtests,
         }}
         submitLabel="Simpan Perubahan"

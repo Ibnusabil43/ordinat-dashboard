@@ -37,6 +37,18 @@ export const SUBTEST_TYPES: readonly SubtestType[] = [
 export const SUBTEST_CODES = SUBTEST_TYPES.map((s) => s.code);
 
 /**
+ * SubtestLink.checkStatus values that count as "genuinely filled" for the
+ * "Link Terisi" counts (queries/events.ts) — only a confirmed-good "Cek
+ * Link" result. A link with no check yet (checkStatus null) still counts —
+ * running the check is optional, so an unrun check isn't treated as a
+ * warning. Anything actively flagged bad (not_found/wrong_school/error)
+ * does not count, which is the whole point: a stale "12/13 filled" number
+ * shouldn't hide that some of those 12 are wrong. See
+ * server/actions/link-check.ts.
+ */
+export const LINK_CHECK_OK_STATUSES = ["match"] as const;
+
+/**
  * Resolves a School's `activeSubtests` column to the actual subtest list, in
  * canonical order. CONVENTION (see schema.prisma): an empty array means
  * "all 13" — that's how existing rows (defaulted to []) and schools where

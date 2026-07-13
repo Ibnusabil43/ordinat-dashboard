@@ -35,6 +35,12 @@ model School {
   // recap results all go to one shared folder (GOOGLE_DRIVE_RESULTS_FOLDER_ID
   // env var), distinguished by filename instead. See CLAUDE.md > Domain.
   driveRawSheetId String?
+  // Drive folder ID holding this school's Google Forms (one per subtest) —
+  // the "Cek Link" feature lists forms here and checks that each subtest's
+  // tiny.cc link actually resolves to one of them, catching wrong-school or
+  // stale links. Nullable/optional like driveRawSheetId: absence just means
+  // the check isn't available yet for this school. See google-forms-check.ts.
+  driveFormFolderId String?
   // Subtest codes this school actually runs (defaults to all 13, EPPS→PAPI).
   // CONVENTION: an empty array means "all 13" (unconfigured) — so existing
   // rows need no backfill and resolveActiveSubtests() maps [] → the full set.
@@ -109,6 +115,17 @@ model SubtestLink {
   subtestTypeId String
   subtestType   SubtestType   @relation(fields: [subtestTypeId], references: [id], onDelete: Cascade)
   url           String
+  // Last "Cek Link" result (see server/actions/link-check.ts) — null means
+  // never checked. Only "match" counts as a genuinely filled link for the
+  // "Link Terisi" counts (queries/events.ts); the others are filled-but-wrong,
+  // which is exactly what the count should NOT hide. checkMessage carries the
+  // full human-readable reason (e.g. naming which other school a wrong_school
+  // link actually belongs to) so it never needs re-deriving at display time.
+  // Reset to null whenever the URL itself changes (upsertSubtestLinks) — an
+  // edited link invalidates whatever was last checked.
+  checkStatus   String?
+  checkMessage  String?
+  checkedAt     DateTime?
   updatedAt     DateTime      @updatedAt
 
   @@unique([eventId, subtestTypeId]) // one URL per subtest per event

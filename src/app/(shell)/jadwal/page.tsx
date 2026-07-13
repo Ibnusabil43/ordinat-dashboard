@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
+import { resolveActiveSubtests } from "@/lib/constants";
 import { formatDateID } from "@/lib/format";
 
 export default async function EventListPage() {
@@ -29,7 +30,7 @@ export default async function EventListPage() {
     {
       key: "links",
       header: "Link Terisi",
-      render: (e) => `${e._count.links}/12`,
+      render: (e) => `${e._count.links}/${resolveActiveSubtests(e.school.activeSubtests).length}`,
     },
     {
       key: "actions",

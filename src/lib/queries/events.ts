@@ -1,9 +1,20 @@
 import { prisma } from "@/lib/prisma";
+import { LINK_CHECK_OK_STATUSES } from "@/lib/constants";
 
 /**
  * Read helpers for psikotes events. Shared by the admin list/detail (Phase 4)
  * and — via the joined shape — reused where events surface elsewhere (BE-C5).
  */
+
+/**
+ * "Link Terisi" count filter — a link counts as filled only if it's never
+ * been checked (benefit of the doubt) or its last "Cek Link" result was
+ * good. A link actively flagged not_found/wrong_school/error does NOT
+ * count, so the number can't hide a known-bad link. See LINK_CHECK_OK_STATUSES.
+ */
+const FILLED_LINK_WHERE = {
+  OR: [{ checkStatus: null }, { checkStatus: { in: [...LINK_CHECK_OK_STATUSES] } }],
+};
 
 /** All events, newest scheduled first, with school + filled-link count for the list. */
 export async function getEvents() {
@@ -13,8 +24,8 @@ export async function getEvents() {
       id: true,
       scheduledDate: true,
       status: true,
-      school: { select: { id: true, name: true, slug: true } },
-      _count: { select: { links: true } },
+      school: { select: { id: true, name: true, slug: true, activeSubtests: true } },
+      _count: { select: { links: { where: FILLED_LINK_WHERE } } },
     },
   });
 }
@@ -39,16 +50,19 @@ export async function getEventById(id: string) {
           name: true,
           slug: true,
           activeSubtests: true,
+          driveFormFolderId: true,
           kelas: {
             orderBy: { order: "asc" },
             select: { id: true, name: true, tester: true },
           },
         },
       },
-      _count: { select: { links: true } },
+      _count: { select: { links: { where: FILLED_LINK_WHERE } } },
       links: {
         select: {
           url: true,
+          checkStatus: true,
+          checkMessage: true,
           subtestType: { select: { code: true, label: true, order: true } },
         },
       },
