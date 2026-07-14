@@ -14,10 +14,15 @@ import type { NameSearchResult } from "@/lib/queries/monitoring";
  * provides both.
  *
  * Kelas is a required field now (FE-Q1) — every search is scoped to a
- * specific kelas, there's no "search all kelas" mode. "Search Again" re-runs
- * the last submitted query+kelas against fresh Sheets data — separate from
- * the school dashboard's own "Refresh Data" button (RefreshDataButton),
- * which only covers the submission summary.
+ * specific kelas, there's no "search all kelas" mode. Fixed dropdown, not
+ * free text — "KELAS X 1".."KELAS X {kelasCount}", matching the naming
+ * convention real RAW sheets actually use (confirmed against live data), so
+ * there's no typo/format mismatch between what's typed here and what's in
+ * the sheet's KELAS column. `kelasCount` comes from the school's real Kelas
+ * row count (Manajemen Sekolah > Kelola Kelas), not a hardcoded number.
+ * "Search Again" re-runs the last submitted query+kelas against fresh Sheets
+ * data — separate from the school dashboard's own "Refresh Data" button
+ * (RefreshDataButton), which only covers the submission summary.
  *
  * Status-related copy in this component (labels, messages) is in English —
  * a confirmed, scoped exception to CLAUDE.md's Indonesian-UI rule for this
@@ -25,9 +30,10 @@ import type { NameSearchResult } from "@/lib/queries/monitoring";
  * Everything else (the intro line, the Cari button, form errors) stays
  * Indonesian, unchanged.
  */
-export function NameCheck({ schoolId }: { schoolId: string }) {
+export function NameCheck({ schoolId, kelasCount }: { schoolId: string; kelasCount: number }) {
   const [query, setQuery] = useState("");
   const [kelas, setKelas] = useState("");
+  const kelasOptions = Array.from({ length: kelasCount }, (_, i) => `KELAS X ${i + 1}`);
   const [lastQuery, setLastQuery] = useState<string>();
   const [lastKelas, setLastKelas] = useState<string>();
   const [results, setResults] = useState<NameSearchResult[] | null>(null);
@@ -61,30 +67,42 @@ export function NameCheck({ schoolId }: { schoolId: string }) {
     <div className="flex flex-col gap-4">
       <p className="text-sm text-zinc-500">Cari nama siswa, lihat subtes mana saja yang sudah masuk.</p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Nama siswa..."
-          className="h-10 flex-1 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:outline-none"
-        />
-        <input
-          type="text"
-          value={kelas}
-          onChange={(e) => setKelas(e.target.value)}
-          placeholder="Kelas (mis. XI IPA 2)"
-          className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:outline-none sm:w-40"
-        />
-        <button
-          type="submit"
-          disabled={pending || !query.trim() || !kelas.trim()}
-          className="flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Search aria-hidden="true" size={16} />
-          {pending ? "Mencari..." : "Cari"}
-        </button>
-      </form>
+      {kelasCount === 0 ? (
+        <p className="text-xs text-amber-700">
+          Belum ada kelas diatur untuk sekolah ini — tambahkan dulu di Manajemen Sekolah &gt; Kelola Kelas
+          agar Cek Nama bisa dipakai.
+        </p>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Nama siswa..."
+            className="h-10 flex-1 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:outline-none"
+          />
+          <select
+            value={kelas}
+            onChange={(e) => setKelas(e.target.value)}
+            className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:outline-none sm:w-40"
+          >
+            <option value="">Kelas...</option>
+            {kelasOptions.map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            disabled={pending || !query.trim() || !kelas.trim()}
+            className="flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Search aria-hidden="true" size={16} />
+            {pending ? "Mencari..." : "Cari"}
+          </button>
+        </form>
+      )}
 
       {error && <p className="text-xs text-red-600">{error}</p>}
 
@@ -107,7 +125,7 @@ export function NameCheck({ schoolId }: { schoolId: string }) {
               {pending ? "Searching..." : "Search Again"}
             </button>
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {results.map((r) => (
               <ResultRow key={r.code} result={r} />
             ))}
@@ -124,6 +142,12 @@ export function NameCheck({ schoolId }: { schoolId: string }) {
  * MATCH_THRESHOLD (queries/monitoring.ts), not just the winner. This lets a
  * skeptical admin expand and eyeball the other possibilities too, instead of
  * blindly trusting a single green check.
+ *
+ * Card, not a dense list row (mobile-friendliness pass): icon + label get
+ * their own full-width header, detail text gets its own full-width line
+ * below instead of being squeezed beside the icon, and the expand toggle is
+ * a proper >=44px tappable row (DESIGN.md's tap-target rule) instead of a
+ * small text link.
  */
 function ResultRow({ result }: { result: NameSearchResult }) {
   const [expanded, setExpanded] = useState(false);
@@ -131,37 +155,39 @@ function ResultRow({ result }: { result: NameSearchResult }) {
     result.status === "found" || result.status === "found_elsewhere" ? result.matches.slice(1) : [];
 
   return (
-    <div className="rounded-lg bg-zinc-50 px-3 py-2 text-sm">
-      <div className="flex items-start justify-between gap-2">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="flex items-center gap-3 px-3 py-3">
+        <StatusIcon status={result.status} />
         <div className="min-w-0 flex-1">
-          <span className="text-zinc-900">{result.label}</span>
+          <span className="font-medium text-zinc-900">{result.label}</span>
           <ResultDetail result={result} />
         </div>
-        <StatusIcon status={result.status} />
       </div>
       {otherMatches.length > 0 && (
         <>
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="mt-1 flex cursor-pointer items-center gap-1 text-xs font-medium text-zinc-500 transition hover:text-zinc-900"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 border-t border-zinc-100 px-3 py-2.5 text-left text-xs font-medium text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900"
           >
+            <span>
+              {expanded
+                ? "Hide other possibilities"
+                : `Show ${otherMatches.length} other possibilit${otherMatches.length === 1 ? "y" : "ies"}`}
+            </span>
             <ChevronDown
               aria-hidden="true"
-              size={12}
-              className={clsx("transition-transform", expanded && "rotate-180")}
+              size={14}
+              className={clsx("shrink-0 transition-transform", expanded && "rotate-180")}
             />
-            {expanded
-              ? "Hide other possibilities"
-              : `Show ${otherMatches.length} other possibilit${otherMatches.length === 1 ? "y" : "ies"}`}
           </button>
           {expanded && (
-            <ul className="mt-1 flex flex-col gap-0.5 border-t border-zinc-200 pt-1 text-xs">
+            <ul className="flex flex-col gap-2.5 border-t border-zinc-100 bg-zinc-50 px-3 py-2.5 text-xs">
               {otherMatches.map((m, i) => (
-                <li key={i} className="text-zinc-500">
-                  {m.name}
-                  {m.kelas && <span> &middot; {m.kelas}</span>}
-                  <span className="text-zinc-400"> &mdash; Possible match</span>
+                <li key={i} className="text-zinc-600">
+                  <span className="font-medium text-zinc-900">{m.name}</span>
+                  {m.kelas && <span className="text-zinc-500"> &middot; {m.kelas}</span>}
+                  <span className="block text-zinc-400">Possible match</span>
                 </li>
               ))}
             </ul>
@@ -207,7 +233,7 @@ function ResultDetail({ result }: { result: NameSearchResult }) {
   if (result.status === "found") {
     const m = result.matches[0];
     return (
-      <p className="mt-0.5 truncate text-xs text-zinc-500">
+      <p className="mt-0.5 break-words text-xs text-zinc-500">
         {m.name}
         {m.kelas && <span> &middot; {m.kelas}</span>}
         <span className="text-green-700"> &mdash; Match</span>
@@ -224,12 +250,12 @@ function ResultDetail({ result }: { result: NameSearchResult }) {
   }
   if (result.status === "ambiguous") {
     return (
-      <ul className="mt-0.5 flex flex-col gap-0.5 text-xs">
+      <ul className="mt-1 flex flex-col gap-1.5 text-xs">
         {result.matches.map((m, i) => (
           <li key={i} className="text-amber-700">
-            {m.name}
+            <span className="font-medium">{m.name}</span>
             {m.kelas && <span className="text-zinc-500"> &middot; {m.kelas}</span>}
-            <span className="text-zinc-400"> &mdash; Possible match</span>
+            <span className="block text-zinc-400">Possible match</span>
           </li>
         ))}
       </ul>

@@ -114,7 +114,7 @@ export default async function SchoolMonitoringPage({
               key: "cek-nama",
               label: "Cek Nama",
               content: school.driveRawSheetId ? (
-                <NameCheck schoolId={school.id} />
+                <NameCheck schoolId={school.id} kelasCount={kelas.length} />
               ) : (
                 <EmptyState
                   icon={AlertTriangle}
