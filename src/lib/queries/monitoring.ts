@@ -8,7 +8,17 @@
  */
 import { prisma } from "@/lib/prisma";
 import { listSheetTabs, batchReadTabs } from "@/lib/google-sheets";
-import { matchesName } from "@/lib/name-match";
+import { scoreNameMatch, normalizeName, MATCH_THRESHOLD } from "@/lib/name-match";
+
+/**
+ * "Confident winner" thresholds (BE-O3) — plain arithmetic over the scores
+ * scoreNameMatch already produced, not another fuzzy-matching signal. A top
+ * candidate only counts as a confident winner if it clears CONFIDENT_MIN_SCORE
+ * AND beats every other candidate (any kelas) by at least CONFIDENT_MARGIN.
+ * Otherwise the tab resolves to "ambiguous" rather than silently picking one.
+ */
+const CONFIDENT_MIN_SCORE = 0.9;
+const CONFIDENT_MARGIN = 0.15;
 
 export interface SubtestSubmissionCount {
   code: string;
@@ -77,23 +87,37 @@ export async function getSubmissionSummary(schoolId: string): Promise<SubtestSub
   });
 }
 
+export interface NameMatchCandidate {
+  name: string;
+  kelas: string | null;
+  score: number;
+}
+
 export interface NameSearchResult {
   code: string;
   label: string;
-  found: boolean;
-  /** KELAS value from the matched row, only set when found — lets the admin see which kelas submitted this subtest, not just that it exists. */
-  kelas: string | null;
+  status: "not_found" | "found" | "found_elsewhere" | "ambiguous";
+  /** Every surviving candidate (score >= MATCH_THRESHOLD), ranked by score descending — [] only for not_found. matches[0] is the one `status` is about; the rest are "other possibilities" the UI can offer to expand, even when status is a confident found/found_elsewhere. */
+  matches: NameMatchCandidate[];
+}
+
+function emptyResult(code: string, label: string): NameSearchResult {
+  return { code, label, status: "not_found", matches: [] };
 }
 
 /**
- * Searches one school's 12 tabs for a name (BE-M3) — resolves the "NAMA
- * LENGKAP" and "KELAS" columns per tab by header (position varies slightly
- * between real-world sheets, so this never assumes a fixed index) and runs
- * BE-M2's lightweight matcher against every row in the name column.
+ * Searches one school's 12+ tabs for a name, scoped to a specific kelas
+ * (BE-O3, v2 of BE-M3) — resolves the "NAMA LENGKAP" and "KELAS" columns per
+ * tab by header (position varies slightly between real-world sheets, so this
+ * never assumes a fixed index), scores every row with scoreNameMatch (not
+ * just the first hit like v1's `.find()`), and resolves a status via the
+ * "confident winner" rule above. `kelas` is mandatory — every Cek Nama search
+ * is now scoped to a specific kelas, there's no "search all kelas" mode.
  */
 export async function searchNameAcrossSheets(
   schoolId: string,
   query: string,
+  kelas: string,
 ): Promise<NameSearchResult[] | null> {
   const school = await prisma.school.findUnique({
     where: { id: schoolId },
@@ -107,18 +131,55 @@ export async function searchNameAcrossSheets(
     school.driveRawSheetId,
     tabs.map((t) => t.tabName).filter((n): n is string => Boolean(n)),
   );
+  const targetKelas = normalizeName(kelas);
+
   return tabs.map(({ code, label, tabName }) => {
-    if (!tabName) return { code, label, found: false, kelas: null };
+    if (!tabName) return emptyResult(code, label);
     const rows = rowsByTab.get(tabName) ?? [];
     const header = rows[0] ?? [];
     const nameCol = header.findIndex((h) => h?.trim().toUpperCase() === "NAMA LENGKAP");
-    if (nameCol === -1) return { code, label, found: false, kelas: null };
+    if (nameCol === -1) return emptyResult(code, label);
     const kelasCol = header.findIndex((h) => h?.trim().toUpperCase() === "KELAS");
 
-    const matchedRow = rows.slice(1).find((row) => matchesName(query, row[nameCol] ?? ""));
-    if (!matchedRow) return { code, label, found: false, kelas: null };
+    const candidates: NameMatchCandidate[] = rows
+      .slice(1)
+      .map((row): NameMatchCandidate | null => {
+        const score = scoreNameMatch(query, row[nameCol] ?? "");
+        if (score < MATCH_THRESHOLD) return null;
+        return {
+          name: row[nameCol] ?? "",
+          kelas: kelasCol !== -1 ? row[kelasCol]?.trim() || null : null,
+          score,
+        };
+      })
+      .filter((c): c is NameMatchCandidate => c !== null)
+      .sort((a, b) => b.score - a.score);
 
-    const kelas = kelasCol !== -1 ? matchedRow[kelasCol]?.trim() || null : null;
-    return { code, label, found: true, kelas };
+    if (candidates.length === 0) return emptyResult(code, label);
+
+    const [winner, runnerUp] = candidates;
+    const isConfidentWinner =
+      winner.score >= CONFIDENT_MIN_SCORE && (!runnerUp || winner.score - runnerUp.score >= CONFIDENT_MARGIN);
+
+    if (!isConfidentWinner) {
+      return { code, label, status: "ambiguous", matches: candidates };
+    }
+
+    // No KELAS column, or the winner's row has no kelas value — can't check
+    // for a mismatch either way, so a confident winner counts as found.
+    const matchesKelas =
+      kelasCol === -1 || winner.kelas === null || normalizeName(winner.kelas) === targetKelas;
+
+    // `matches` always carries every surviving candidate, not just the
+    // winner — `status` only says how confident the top one is, it doesn't
+    // gate what's returned. Lets the UI offer "other possibilities" even on
+    // a confident `found`/`found_elsewhere` result, for a human to double-
+    // check rather than blindly trusting the top pick.
+    return {
+      code,
+      label,
+      status: matchesKelas ? "found" : "found_elsewhere",
+      matches: candidates,
+    };
   });
 }
