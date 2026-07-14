@@ -18,12 +18,19 @@ import { searchNameAcrossSheets, type NameSearchResult } from "@/lib/queries/mon
  * getCurrentUser(), not requireStaff() — Monitoring is TESTER's one allowed
  * page (PRD FR-11), so this must NOT block TESTER the way every other
  * action in this app does. All 3 roles reach this.
+ *
+ * `kelas` is mandatory (BE-O3, v2) — every Cek Nama search is scoped to a
+ * specific kelas now, there's no "search all kelas" mode.
  */
-export async function searchName(schoolId: string, query: string): Promise<NameSearchResult[] | null> {
+export async function searchName(
+  schoolId: string,
+  query: string,
+  kelas: string,
+): Promise<NameSearchResult[] | null> {
   if (!(await getCurrentUser())) return null;
 
   try {
-    return await searchNameAcrossSheets(schoolId, query);
+    return await searchNameAcrossSheets(schoolId, query, kelas);
   } catch {
     return null;
   }
