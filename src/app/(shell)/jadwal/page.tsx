@@ -1,26 +1,37 @@
 import Link from "next/link";
-import { Plus, ChevronRight, CalendarDays, Pencil } from "lucide-react";
+import { ChevronRight, CalendarDays } from "lucide-react";
 import { getEvents, type EventListItem } from "@/lib/queries/events";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
-import { resolveActiveSubtests } from "@/lib/constants";
-import { formatDateID } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 
+/**
+ * "Add Schedule" removed here (user request, post-19-7) — every school now
+ * gets its schedule created automatically alongside the school itself
+ * (schools.ts's createSchool), so there's no standalone create-a-schedule
+ * flow anymore. This list is purely a status overview; a schedule with no
+ * date yet ("Date not set yet") is set from its own detail page.
+ */
 export default async function EventListPage() {
   const events = await getEvents();
 
   const columns: DataTableColumn<EventListItem>[] = [
     {
       key: "school",
-      header: "Sekolah",
+      header: "School",
       render: (e) => <span className="font-medium text-zinc-900">{e.school.name}</span>,
     },
     {
       key: "date",
-      header: "Tanggal",
-      render: (e) => formatDateID(e.scheduledDate),
+      header: "Date",
+      render: (e) =>
+        e.scheduledDate ? (
+          formatDate(e.scheduledDate)
+        ) : (
+          <span className="text-zinc-400">Date not set yet</span>
+        ),
     },
     {
       key: "status",
@@ -28,33 +39,18 @@ export default async function EventListPage() {
       render: (e) => <StatusBadge status={e.status} />,
     },
     {
-      key: "links",
-      header: "Link Terisi",
-      render: (e) => `${e._count.links}/${resolveActiveSubtests(e.school.activeSubtests).length}`,
-    },
-    {
       key: "actions",
-      header: "Aksi",
+      header: "Actions",
       className: "text-right",
       render: (e) => (
-        <div className="flex items-center justify-end gap-4">
-          <Link
-            href={`/jadwal/${e.id}/edit`}
-            aria-label={`Ubah jadwal ${e.school.name}`}
-            className="inline-flex items-center gap-1 text-sm font-medium text-zinc-500 transition hover:text-zinc-900"
-          >
-            <Pencil aria-hidden="true" size={14} />
-            Ubah
-          </Link>
-          <Link
-            href={`/jadwal/${e.id}`}
-            aria-label={`Detail jadwal ${e.school.name}`}
-            className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 transition hover:text-zinc-500"
-          >
-            Detail
-            <ChevronRight aria-hidden="true" size={16} />
-          </Link>
-        </div>
+        <Link
+          href={`/jadwal/${e.id}`}
+          aria-label={`View schedule for ${e.school.name}`}
+          className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 transition hover:text-zinc-500"
+        >
+          Detail
+          <ChevronRight aria-hidden="true" size={16} />
+        </Link>
       ),
     },
   ];
@@ -62,17 +58,8 @@ export default async function EventListPage() {
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <PageHeader
-        title="Manajemen Jadwal"
-        description="Kelola jadwal psikotes tiap sekolah dan pantau statusnya."
-        action={
-          <Link
-            href="/jadwal/baru"
-            className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
-          >
-            <Plus aria-hidden="true" size={18} />
-            Tambah Jadwal
-          </Link>
-        }
+        title="Schedules"
+        description="Track each school's test schedule and status."
       />
 
       <DataTable
@@ -82,17 +69,8 @@ export default async function EventListPage() {
         emptyState={
           <EmptyState
             icon={CalendarDays}
-            title="Belum ada jadwal"
-            description="Buat jadwal psikotes pertama untuk sebuah sekolah."
-            action={
-              <Link
-                href="/jadwal/baru"
-                className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
-              >
-                <Plus aria-hidden="true" size={18} />
-                Tambah Jadwal
-              </Link>
-            }
+            title="No schedules yet"
+            description="Schedules are created automatically when you add a school."
           />
         }
       />

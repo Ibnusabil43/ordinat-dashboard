@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDateID } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/status";
 import type { RecapPickerEventOption } from "@/lib/queries/events";
 
@@ -25,7 +25,7 @@ export function EventPicker({
   if (events.length === 0) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-500 sm:p-6">
-        Belum ada sekolah yang sedang atau sudah psikotes.
+        No school is currently testing or has finished testing yet.
       </div>
     );
   }
@@ -33,7 +33,7 @@ export function EventPicker({
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
       <label htmlFor="eventPicker" className="mb-1.5 block text-sm font-medium text-zinc-900">
-        Pilih Jadwal
+        Select Schedule
       </label>
       <select
         id="eventPicker"
@@ -42,12 +42,12 @@ export function EventPicker({
         className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:outline-none"
       >
         <option value="" disabled>
-          Pilih sekolah…
+          Select a school…
         </option>
         {events.map((e) => (
           <option key={e.id} value={e.id}>
-            {e.school.name} — {formatDateID(e.scheduledDate)}
-            {e.status !== "ONGOING" ? ` (${STATUS_LABEL[e.status]} — ulang)` : ""}
+            {e.school.name} — {formatDate(e.scheduledDate)}
+            {e.status !== "ONGOING" ? ` (${STATUS_LABEL[e.status]} — re-run)` : ""}
           </option>
         ))}
       </select>

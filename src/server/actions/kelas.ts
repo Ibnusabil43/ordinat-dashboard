@@ -46,7 +46,7 @@ export async function createKelas(schoolId: string, formData: FormData): Promise
       data: { schoolId, name: parsedName.data, order: (lastKelas?.order ?? -1) + 1 },
     });
   } catch {
-    return { error: "Gagal menambah kelas. Coba lagi." };
+    return { error: "Failed to add class. Try again." };
   }
 
   revalidateKelasPaths(schoolId);
@@ -73,7 +73,7 @@ export async function updateKelas(id: string, formData: FormData): Promise<{ err
     const updated = await prisma.kelas.update({ where: { id }, data, select: { schoolId: true } });
     schoolId = updated.schoolId;
   } catch {
-    return { error: "Gagal menyimpan kelas. Coba lagi." };
+    return { error: "Failed to save class. Try again." };
   }
 
   revalidateKelasPaths(schoolId);
@@ -89,7 +89,7 @@ export async function deleteKelas(id: string): Promise<{ error?: string }> {
     const deleted = await prisma.kelas.delete({ where: { id }, select: { schoolId: true } });
     schoolId = deleted.schoolId;
   } catch {
-    return { error: "Gagal menghapus kelas. Coba lagi." };
+    return { error: "Failed to delete class. Try again." };
   }
 
   revalidateKelasPaths(schoolId);

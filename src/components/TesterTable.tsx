@@ -15,7 +15,7 @@ export function TesterTable({ rows }: { rows: TesterRow[] }) {
   const columns: DataTableColumn<TesterRow>[] = [
     {
       key: "kelas",
-      header: "Kelas",
+      header: "Class",
       render: (r) => <span className="font-medium text-zinc-900">{r.kelas}</span>,
     },
     {
@@ -25,7 +25,7 @@ export function TesterTable({ rows }: { rows: TesterRow[] }) {
         r.tester ? (
           <span className="text-zinc-700">{r.tester}</span>
         ) : (
-          <span className="text-xs text-zinc-400">Belum ditentukan</span>
+          <span className="text-xs text-zinc-400">Not assigned</span>
         ),
     },
   ];

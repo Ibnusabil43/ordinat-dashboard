@@ -6,7 +6,7 @@ import { upsertSubtestLinks } from "@/server/actions/links";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { LinkForm } from "@/components/admin/LinkForm";
 import { CheckLinksPanel } from "@/components/admin/CheckLinksPanel";
-import { formatDateID } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { resolveActiveSubtests } from "@/lib/constants";
 import { getCurrentRole } from "@/lib/auth-guard";
 
@@ -36,12 +36,12 @@ export default async function LinkManagementPage({
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
-        Kembali
+        Back
       </Link>
 
       <PageHeader
         title="Links"
-        description={`${event.school.name} — ${formatDateID(event.scheduledDate)}`}
+        description={`${event.school.name} — ${event.scheduledDate ? formatDate(event.scheduledDate) : "Date not set yet"}`}
       />
 
       <CheckLinksPanel eventId={event.id} />

@@ -34,7 +34,7 @@ export async function upsertSubtestLinks(
     where: { id: eventId },
     select: { school: { select: { activeSubtests: true } } },
   });
-  if (!event) return { error: "Jadwal tidak ditemukan." };
+  if (!event) return { error: "Schedule not found." };
 
   const links = resolveActiveSubtests(event.school.activeSubtests).map(({ code }) => ({
     code,
@@ -81,7 +81,7 @@ export async function upsertSubtestLinks(
       }
     });
   } catch {
-    return { error: "Gagal menyimpan link. Coba lagi." };
+    return { error: "Failed to save links. Try again." };
   }
 
   revalidatePath(`/links/${eventId}`);

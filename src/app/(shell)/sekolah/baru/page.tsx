@@ -17,10 +17,10 @@ export default async function NewSchoolPage() {
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
-        Kembali
+        Back
       </Link>
-      <PageHeader title="Tambah Sekolah" description="Daftarkan sekolah baru." />
-      <SchoolForm action={createSchool} submitLabel="Simpan" />
+      <PageHeader title="Add School" description="Register a new school." />
+      <SchoolForm action={createSchool} submitLabel="Save" />
     </div>
   );
 }

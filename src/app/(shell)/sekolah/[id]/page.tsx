@@ -26,10 +26,10 @@ export default async function EditSchoolPage({
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
-        Kembali
+        Back
       </Link>
       {/* "Kelola Kelas" removed here (Phase 19, FE-S2) — Kelas management now lives under its own Classes menu (/classes/[schoolId]). */}
-      <PageHeader title="Edit Sekolah" description={school.name} />
+      <PageHeader title="Edit School" description={school.name} />
       <SchoolForm
         action={updateSchool.bind(null, school.id)}
         initial={{
@@ -39,7 +39,7 @@ export default async function EditSchoolPage({
           driveFormFolderId: school.driveFormFolderId,
           activeSubtests: school.activeSubtests,
         }}
-        submitLabel="Simpan Perubahan"
+        submitLabel="Save Changes"
       />
     </div>
   );

@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Ordinat Dashboard",
-  description: "Jadwal, link, dan progress psikotes sekolah.",
+  description: "Schedules, links, and psychotest progress for schools.",
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    <html lang="en">
       <body>
         {children}
         <Analytics />

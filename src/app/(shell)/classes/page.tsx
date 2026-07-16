@@ -17,25 +17,25 @@ export default async function ClassesPage() {
   const columns: DataTableColumn<SchoolForClasses>[] = [
     {
       key: "name",
-      header: "Sekolah",
+      header: "School",
       render: (s) => <span className="font-medium text-zinc-900">{s.name}</span>,
     },
     {
       key: "kelas",
-      header: "Kelas",
+      header: "Classes",
       render: (s) => <span className="text-zinc-500">{s._count.kelas}</span>,
     },
     {
       key: "actions",
-      header: "Aksi",
+      header: "Actions",
       className: "text-right",
       render: (s) => (
         <Link
           href={`/classes/${s.id}`}
-          aria-label={`Kelola kelas ${s.name}`}
+          aria-label={`Manage classes for ${s.name}`}
           className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 transition hover:text-zinc-500"
         >
-          Kelola
+          Manage
           <ChevronRight aria-hidden="true" size={16} />
         </Link>
       ),
@@ -50,7 +50,7 @@ export default async function ClassesPage() {
         columns={columns}
         data={schools}
         getRowKey={(s) => s.id}
-        emptyState={<EmptyState icon={GraduationCap} title="Belum ada sekolah terdaftar" />}
+        emptyState={<EmptyState icon={GraduationCap} title="No schools yet" />}
       />
     </div>
   );

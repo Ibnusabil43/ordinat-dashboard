@@ -26,7 +26,7 @@ export function ConfirmModal({
   title,
   description,
   confirmLabel,
-  cancelLabel = "Batal",
+  cancelLabel = "Cancel",
   danger = false,
   pending = false,
   error,
@@ -48,7 +48,12 @@ export function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    // `fixed inset-0` spans the whole browser viewport, sidebar included —
+    // without the sm:pl-60 offset (matching Sidebar.tsx's own w-60), the
+    // flex-centered dialog reads as pushed left of the content area's true
+    // center on desktop. Sidebar is a drawer (not persistent) below `sm`,
+    // so no offset is needed there.
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:pl-60">
       <div
         className="absolute inset-0 bg-zinc-900/40 backdrop-blur-[1px]"
         aria-hidden="true"
@@ -86,7 +91,7 @@ export function ConfirmModal({
               danger ? "bg-red-600 hover:bg-red-700" : "bg-zinc-900 hover:bg-zinc-700",
             )}
           >
-            {pending ? "Memproses..." : confirmLabel}
+            {pending ? "Processing..." : confirmLabel}
           </button>
         </div>
       </div>

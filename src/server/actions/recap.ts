@@ -48,23 +48,27 @@ export async function uploadRecapResultToDrive(
   if ("error" in guard) return { error: guard.error };
 
   const folderId = process.env.GOOGLE_DRIVE_RESULTS_FOLDER_ID;
-  if (!folderId) return { error: "GOOGLE_DRIVE_RESULTS_FOLDER_ID belum diatur." };
+  if (!folderId) return { error: "GOOGLE_DRIVE_RESULTS_FOLDER_ID isn't set." };
 
   const event = await prisma.psikotesEvent.findUnique({
     where: { id: eventId },
     select: { driveResultFileId: true, scheduledDate: true, school: { select: { name: true } } },
   });
-  if (!event) return { error: "Jadwal tidak ditemukan." };
+  if (!event) return { error: "Schedule not found." };
+  // Recap only ever reaches "done" for an event that already has a real
+  // date (advanceToOngoing requires one) — this is a defensive guard for
+  // the type, not a real-world path.
+  if (!event.scheduledDate) return { error: "This schedule doesn't have a test date yet." };
 
   let bytes: Buffer;
   try {
     const res = await fetch(recapToolUrl(`/download/${encodeURIComponent(downloadFilename)}`), {
       headers: recapAuthHeader(),
     });
-    if (!res.ok) return { error: "Gagal mengambil file hasil dari tool rekap." };
+    if (!res.ok) return { error: "Failed to fetch the result file from the recap tool." };
     bytes = Buffer.from(await res.arrayBuffer());
   } catch {
-    return { error: "Tool rekap tidak bisa dihubungi." };
+    return { error: "Couldn't reach the recap tool." };
   }
 
   const filename = recapResultFilename(event.school.name, event.scheduledDate);
@@ -76,6 +80,6 @@ export async function uploadRecapResultToDrive(
     await prisma.psikotesEvent.update({ where: { id: eventId }, data: { driveResultFileId: fileId } });
     return { fileId };
   } catch {
-    return { error: "Gagal mengunggah hasil ke Drive." };
+    return { error: "Failed to upload the result to Drive." };
   }
 }

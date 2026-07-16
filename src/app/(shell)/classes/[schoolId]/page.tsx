@@ -31,7 +31,7 @@ export default async function ClassesManagementPage({
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
-        Kembali
+        Back
       </Link>
       <PageHeader title="Classes" description={school.name} />
       <KelasManager schoolId={school.id} kelas={kelas} />

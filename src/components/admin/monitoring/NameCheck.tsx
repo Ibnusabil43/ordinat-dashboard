@@ -19,16 +19,17 @@ import type { NameSearchResult } from "@/lib/queries/monitoring";
  * convention real RAW sheets actually use (confirmed against live data), so
  * there's no typo/format mismatch between what's typed here and what's in
  * the sheet's KELAS column. `kelasCount` comes from the school's real Kelas
- * row count (Manajemen Sekolah > Kelola Kelas), not a hardcoded number.
+ * row count (the Classes menu), not a hardcoded number.
  * "Search Again" re-runs the last submitted query+kelas against fresh Sheets
  * data — separate from the school dashboard's own "Refresh Data" button
  * (RefreshDataButton), which only covers the submission summary.
  *
- * Status-related copy in this component (labels, messages) is in English —
- * a confirmed, scoped exception to CLAUDE.md's Indonesian-UI rule for this
- * feature only, matching the earlier "Refresh Data"/"Search Again" decision.
- * Everything else (the intro line, the Cari button, form errors) stays
- * Indonesian, unchanged.
+ * Status-related copy in this component (labels, messages) was English from
+ * the start — a confirmed, scoped exception to CLAUDE.md's original
+ * Indonesian-UI rule, matching the earlier "Refresh Data"/"Search Again"
+ * decision. The rest of the component's copy (intro line, Search button,
+ * form errors) has since been translated too, as part of the full
+ * English-everywhere sweep — no longer a special case.
  */
 export function NameCheck({ schoolId, kelasCount }: { schoolId: string; kelasCount: number }) {
   const [query, setQuery] = useState("");
@@ -46,7 +47,7 @@ export function NameCheck({ schoolId, kelasCount }: { schoolId: string; kelasCou
       const res = await searchName(schoolId, q, k);
       if (res === null) {
         setResults(null);
-        setError("Gagal mencari. Coba lagi.");
+        setError("Search failed. Try again.");
         return;
       }
       setResults(res);
@@ -65,12 +66,13 @@ export function NameCheck({ schoolId, kelasCount }: { schoolId: string; kelasCou
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-zinc-500">Cari nama siswa, lihat subtes mana saja yang sudah masuk.</p>
+      <p className="text-sm text-zinc-500">
+        Search for a student&rsquo;s name to see which subtests they&rsquo;ve submitted.
+      </p>
 
       {kelasCount === 0 ? (
         <p className="text-xs text-amber-700">
-          Belum ada kelas diatur untuk sekolah ini — tambahkan dulu di Manajemen Sekolah &gt; Kelola Kelas
-          agar Cek Nama bisa dipakai.
+          No classes set up for this school yet — add some in Classes first so Name Check can be used.
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
@@ -78,7 +80,7 @@ export function NameCheck({ schoolId, kelasCount }: { schoolId: string; kelasCou
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nama siswa..."
+            placeholder="Student name..."
             className="h-10 flex-1 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:outline-none"
           />
           <select
@@ -86,7 +88,7 @@ export function NameCheck({ schoolId, kelasCount }: { schoolId: string; kelasCou
             onChange={(e) => setKelas(e.target.value)}
             className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 focus:outline-none sm:w-40"
           >
-            <option value="">Kelas...</option>
+            <option value="">Class...</option>
             {kelasOptions.map((k) => (
               <option key={k} value={k}>
                 {k}
@@ -99,7 +101,7 @@ export function NameCheck({ schoolId, kelasCount }: { schoolId: string; kelasCou
             className="flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Search aria-hidden="true" size={16} />
-            {pending ? "Mencari..." : "Cari"}
+            {pending ? "Searching..." : "Search"}
           </button>
         </form>
       )}
@@ -110,7 +112,7 @@ export function NameCheck({ schoolId, kelasCount }: { schoolId: string; kelasCou
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-zinc-500">
-              Hasil untuk &ldquo;{lastQuery}&rdquo; &middot; Kelas {lastKelas}
+              Results for &ldquo;{lastQuery}&rdquo; &middot; Class {lastKelas}
             </p>
             <button
               type="button"

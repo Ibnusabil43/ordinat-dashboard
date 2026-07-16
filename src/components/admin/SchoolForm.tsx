@@ -21,7 +21,7 @@ function SubmitButton({ label }: { label: string }) {
       disabled={pending}
       className="flex h-10 cursor-pointer items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
     >
-      {pending ? "Menyimpan..." : label}
+      {pending ? "Saving..." : label}
     </button>
   );
 }
@@ -52,6 +52,7 @@ export function SchoolForm({
   const router = useRouter();
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
+  const [scheduledDate, setScheduledDate] = useState("");
   const [touched, setTouched] = useState<{ name?: boolean; slug?: boolean }>({});
   // Active subtests — defaults to all 13 (resolveActiveSubtests maps [] → all).
   const [activeSubtests, setActiveSubtests] = useState<Set<string>>(
@@ -90,7 +91,7 @@ export function SchoolForm({
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
       <div>
         <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-zinc-900">
-          Nama Sekolah
+          School Name
         </label>
         <input
           id="name"
@@ -122,60 +123,87 @@ export function SchoolForm({
           className={`${inputClass(!!slugError)} font-mono`}
         />
         <p className="mt-1 text-xs text-zinc-500">
-          Dipakai di pola URL tiny.cc, mis. <span className="font-mono">tiny.cc/{slug || "SLUG"}-EPPS</span>.
+          Used in the tiny.cc URL pattern, e.g. <span className="font-mono">tiny.cc/{slug || "SLUG"}-EPPS</span>.
         </p>
         {slugError && <p className="mt-1 text-xs text-red-600">{slugError}</p>}
       </div>
 
       {/*
-        Kelas bulk-create rows removed here (Phase 19, FE-U1) — creating
-        classes now happens exclusively under the Classes menu
-        (/classes/[schoolId]) after the school itself exists, not as a
-        create-time shortcut on this form.
+        Create-only "Test Date" (user request, post-19-7, revised) — the
+        school's PsikotesEvent is always created in the same transaction now
+        (schools.ts), whether or not this is filled in; leaving it blank
+        just means the schedule starts as "Date not set yet" and gets its
+        date later via the inline editor on the schedule's own detail page
+        (no separate route). Not shown on edit (`initial` present) — the
+        school's one event already exists by then, so there's no second
+        "create" moment for this field to apply to.
       */}
+      {!initial && (
+        <div>
+          <label htmlFor="scheduledDate" className="mb-1.5 block text-sm font-medium text-zinc-900">
+            Test Date <span className="font-normal text-zinc-400">(optional)</span>
+          </label>
+          <input
+            id="scheduledDate"
+            name="scheduledDate"
+            type="date"
+            value={scheduledDate}
+            onChange={(e) => setScheduledDate(e.target.value)}
+            className={inputClass(!!state?.fieldErrors?.scheduledDate)}
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            The school&rsquo;s schedule is created automatically either way. Leave this blank if you
+            don&rsquo;t know the date yet — you can set it later from the schedule&rsquo;s detail page.
+          </p>
+          {state?.fieldErrors?.scheduledDate && (
+            <p className="mt-1 text-xs text-red-600">{state.fieldErrors.scheduledDate}</p>
+          )}
+        </div>
+      )}
+
       {/* Persisted School column (BE-L1) — editable on both create and edit. */}
       <div>
         <label htmlFor="driveRawSheetId" className="mb-1.5 block text-sm font-medium text-zinc-900">
-          Drive Raw Sheet ID <span className="font-normal text-zinc-400">(opsional)</span>
+          Drive Raw Sheet ID <span className="font-normal text-zinc-400">(optional)</span>
         </label>
         <input
           id="driveRawSheetId"
           name="driveRawSheetId"
           type="text"
           defaultValue={initial?.driveRawSheetId ?? ""}
-          placeholder="Tempel link spreadsheet-nya, atau ID-nya saja"
+          placeholder="Paste the spreadsheet link, or just the ID"
           className={`${inputClass(false)} font-mono`}
         />
         <p className="mt-1 text-xs text-zinc-500">
-          Spreadsheet Google Sheets RAW sekolah ini (12 tab, satu per subtes) — dipakai Monitoring. Tempel
-          link lengkapnya langsung juga bisa, ID-nya otomatis diambil.
+          This school&rsquo;s RAW Google Sheet (12 tabs, one per subtest) — used by Monitoring. You can
+          paste the full link directly, the ID is extracted automatically.
         </p>
       </div>
 
       <div>
         <label htmlFor="driveFormFolderId" className="mb-1.5 block text-sm font-medium text-zinc-900">
-          Drive Form Folder ID <span className="font-normal text-zinc-400">(opsional)</span>
+          Drive Form Folder ID <span className="font-normal text-zinc-400">(optional)</span>
         </label>
         <input
           id="driveFormFolderId"
           name="driveFormFolderId"
           type="text"
           defaultValue={initial?.driveFormFolderId ?? ""}
-          placeholder="Tempel link folder Drive-nya, atau ID-nya saja"
+          placeholder="Paste the Drive folder link, or just the ID"
           className={`${inputClass(false)} font-mono`}
         />
         <p className="mt-1 text-xs text-zinc-500">
-          Folder Google Drive berisi semua Google Form subtes sekolah ini — dipakai fitur &ldquo;Cek
-          Link&rdquo; di Manajemen Link buat ngecek link tiny.cc beneran ngarah ke form yang benar. Tempel
-          link folder-nya langsung juga bisa, ID-nya otomatis diambil.
+          Google Drive folder containing this school&rsquo;s subtest Google Forms — used by the &ldquo;Check
+          Link&rdquo; feature in Links to confirm each tiny.cc link actually points to the right form. You
+          can paste the full link directly, the ID is extracted automatically.
         </p>
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-900">Subtes</label>
+        <label className="mb-1.5 block text-sm font-medium text-zinc-900">Subtests</label>
         <p className="mb-2 text-xs text-zinc-500">
-          Default semua (EPPS–PAPI). Hilangkan centang subtes yang tidak dipakai sekolah ini — berlaku
-          untuk semua jadwal sekolah ini, hanya subtes tercentang yang punya slot link.
+          All checked by default (EPPS–PAPI). Uncheck subtests this school doesn&rsquo;t use — applies to
+          every schedule for this school; only checked subtests get a link slot.
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {SUBTEST_TYPES.map((s) => {
@@ -208,7 +236,7 @@ export function SchoolForm({
           href="/sekolah"
           className="flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
         >
-          Batal
+          Cancel
         </Link>
       </div>
     </form>

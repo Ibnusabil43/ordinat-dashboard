@@ -17,7 +17,7 @@ export function ProgressStepper({ status }: { status: EventStatus }) {
   const activeIndex = statusIndex(status);
 
   return (
-    <div aria-label="Tahapan psikotes">
+    <div aria-label="Psychotest stages">
       {/* Desktop: horizontal, line runs through each dot's row */}
       <ol className="hidden sm:flex">
         {EVENT_STATUSES.map((s, i) => {
