@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { CheckCheck } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { markResume } from "@/server/actions/events";
+import { STATUS_LABEL } from "@/lib/status";
 
 /**
- * "Tandai Selesai" — moves a REKAP event to DONE via markResume. Final and
+ * "Mark Complete" — moves a REKAP event to DONE via markResume. Final and
  * irreversible, so it always goes through a confirmation modal that says so.
  * Not destructive (nothing is deleted), so the confirm button is the normal
  * zinc-900 style, not red.
@@ -39,20 +40,20 @@ export function MarkResumeButton({ id, schoolName }: { id: string; schoolName: s
         className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700 sm:w-auto"
       >
         <CheckCheck aria-hidden="true" size={16} />
-        Tandai Selesai
+        Mark Complete
       </button>
 
       <ConfirmModal
         open={open}
-        title="Tandai rekap selesai?"
+        title="Mark recap complete?"
         description={
           <>
-            Menyelesaikan rekap <span className="font-medium text-zinc-900">{schoolName}</span> akan
-            memindahkan statusnya ke <span className="font-medium text-zinc-900">Tahap Resume</span>.
-            Tindakan ini final dan tidak bisa dibatalkan.
+            Completing the recap for <span className="font-medium text-zinc-900">{schoolName}</span> will
+            move its status to <span className="font-medium text-zinc-900">{STATUS_LABEL.DONE}</span>.
+            This action is final and cannot be undone.
           </>
         }
-        confirmLabel="Tandai Selesai"
+        confirmLabel="Mark Complete"
         pending={pending}
         error={error}
         onConfirm={confirm}

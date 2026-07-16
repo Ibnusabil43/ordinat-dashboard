@@ -1,16 +1,20 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft, Users } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { getSchoolById } from "@/lib/queries/schools";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { SchoolForm } from "@/components/admin/SchoolForm";
 import { updateSchool } from "@/server/actions/schools";
+import { getCurrentRole } from "@/lib/auth-guard";
 
+/** ADMIN-only page (Phase 19, BE-P1) — see sekolah/page.tsx. */
 export default async function EditSchoolPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  if ((await getCurrentRole()) !== "ADMIN") redirect("/");
+
   const { id } = await params;
   const school = await getSchoolById(id);
   if (!school) notFound();
@@ -22,21 +26,10 @@ export default async function EditSchoolPage({
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
-        Kembali
+        Back
       </Link>
-      <PageHeader
-        title="Edit Sekolah"
-        description={school.name}
-        action={
-          <Link
-            href={`/sekolah/${school.id}/kelas`}
-            className="flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
-          >
-            <Users aria-hidden="true" size={16} />
-            Kelola Kelas
-          </Link>
-        }
-      />
+      {/* "Kelola Kelas" removed here (Phase 19, FE-S2) — Kelas management now lives under its own Classes menu (/classes/[schoolId]). */}
+      <PageHeader title="Edit School" description={school.name} />
       <SchoolForm
         action={updateSchool.bind(null, school.id)}
         initial={{
@@ -46,7 +39,7 @@ export default async function EditSchoolPage({
           driveFormFolderId: school.driveFormFolderId,
           activeSubtests: school.activeSubtests,
         }}
-        submitLabel="Simpan Perubahan"
+        submitLabel="Save Changes"
       />
     </div>
   );

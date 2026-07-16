@@ -20,7 +20,7 @@ export async function signIn(
     password: formData.get("password"),
   });
   if (!parsed.success) {
-    return { error: "Username atau password tidak valid." };
+    return { error: "Invalid username or password." };
   }
 
   const supabase = await createClient();
@@ -29,7 +29,7 @@ export async function signIn(
     password: parsed.data.password,
   });
   if (error) {
-    return { error: "Username atau password salah." };
+    return { error: "Incorrect username or password." };
   }
 
   // TESTER can only ever land on Monitoring (BE-H4) — honoring a ?next=

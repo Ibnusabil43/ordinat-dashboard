@@ -22,3 +22,4 @@ package.json
 /scripts/update-users.mjs
 
 /graphify-out
+/.claude

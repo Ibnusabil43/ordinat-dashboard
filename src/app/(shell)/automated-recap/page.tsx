@@ -14,7 +14,7 @@ export default async function AutomatedRecapPage() {
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <PageHeader
         title="Automated Recap"
-        description="Upload file RAW & Rekap — otomatis isi Score, identitas, format tanggal, dan tandai siswa tanpa data."
+        description="Upload the RAW & Recap files — automatically fills in scores, identity, date format, and flags students with no data."
       />
       <RecapTool events={events} />
     </div>

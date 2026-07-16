@@ -80,7 +80,7 @@ function TesterSelectCell({ kelasId, value }: { kelasId: string; value: string }
           autoFocus
           defaultValue={value}
           disabled={pending}
-          placeholder="Nama tester"
+          placeholder="Tester name"
           onBlur={(e) => save(e.currentTarget.value.trim())}
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
@@ -89,7 +89,7 @@ function TesterSelectCell({ kelasId, value }: { kelasId: string; value: string }
         />
         <button
           type="button"
-          title="Pilih dari daftar"
+          title="Choose from list"
           onClick={() => setCustomMode(false)}
           className="flex shrink-0 cursor-pointer items-center justify-center rounded-md p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
         >
@@ -113,13 +113,13 @@ function TesterSelectCell({ kelasId, value }: { kelasId: string; value: string }
       }}
       className="w-full min-w-32 cursor-pointer rounded-md border border-transparent bg-transparent px-2 py-1 text-sm text-zinc-900 transition hover:border-zinc-200 focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900 disabled:opacity-40"
     >
-      <option value="">Belum ditentukan</option>
+      <option value="">Not assigned</option>
       {KNOWN_TESTER_NAMES.map((name) => (
         <option key={name} value={name}>
           {name}
         </option>
       ))}
-      <option value={CUSTOM_TESTER_VALUE}>Lainnya (ketik manual)</option>
+      <option value={CUSTOM_TESTER_VALUE}>Other (type manually)</option>
     </select>
   );
 }
@@ -131,7 +131,7 @@ function RemoveButton({ kelasId, name }: { kelasId: string; name: string }) {
   return (
     <button
       type="button"
-      aria-label={`Hapus ${name}`}
+      aria-label={`Remove ${name}`}
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
@@ -153,7 +153,7 @@ export function KelasManager({ schoolId, kelas }: { schoolId: string; kelas: Kel
 
   const addKelas = () => {
     const fd = new FormData();
-    fd.set("name", `Kelas ${kelas.length + 1}`);
+    fd.set("name", `Class ${kelas.length + 1}`);
     startAddTransition(async () => {
       await createKelas(schoolId, fd);
       router.refresh();
@@ -163,7 +163,7 @@ export function KelasManager({ schoolId, kelas }: { schoolId: string; kelas: Kel
   const columns: DataTableColumn<KelasListItem>[] = [
     {
       key: "name",
-      header: "Kelas",
+      header: "Class",
       render: (k) => <EditableNameCell kelasId={k.id} value={k.name} />,
     },
     {
@@ -188,8 +188,8 @@ export function KelasManager({ schoolId, kelas }: { schoolId: string; kelas: Kel
         emptyState={
           <EmptyState
             icon={Users}
-            title="Belum ada kelas"
-            description="Tambahkan di sini atau saat membuat sekolah."
+            title="No classes yet"
+            description="Add one here whenever you're ready."
           />
         }
       />
@@ -200,7 +200,7 @@ export function KelasManager({ schoolId, kelas }: { schoolId: string; kelas: Kel
         className="flex h-10 w-fit cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 disabled:opacity-40"
       >
         <Plus aria-hidden="true" size={18} />
-        Tambah Kelas
+        Add Class
       </button>
     </div>
   );

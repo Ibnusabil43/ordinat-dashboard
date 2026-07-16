@@ -22,7 +22,7 @@ export async function startRekap(eventId: string, triggeredBy: string): Promise<
     select: { status: true },
   });
   if (!event) {
-    return { ok: false, reason: "not_found", message: "Jadwal tidak ditemukan." };
+    return { ok: false, reason: "not_found", message: "Schedule not found." };
   }
 
   try {
@@ -31,7 +31,7 @@ export async function startRekap(eventId: string, triggeredBy: string): Promise<
     return {
       ok: false,
       reason: "invalid_transition",
-      message: `Transisi tidak sah dari status ${event.status} ke REKAP.`,
+      message: `Invalid transition from status ${event.status} to REKAP.`,
     };
   }
 
@@ -41,7 +41,7 @@ export async function startRekap(eventId: string, triggeredBy: string): Promise<
       prisma.recapJob.create({ data: { eventId, triggeredBy } }),
     ]);
   } catch {
-    return { ok: false, reason: "db_error", message: "Gagal memperbarui status." };
+    return { ok: false, reason: "db_error", message: "Failed to update status." };
   }
 
   return { ok: true };

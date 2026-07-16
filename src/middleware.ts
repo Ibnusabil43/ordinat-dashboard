@@ -9,11 +9,14 @@
  * "/jadwal", etc. "/login" is the one path reachable while logged out.
  *
  * Owns the one role-aware redirect that only makes sense at this layer
- * (it spans every page): TESTER can only ever be on /monitoring (BE-H4a) —
- * every other path, "/" included, bounces there. Deny-everything-except,
- * deliberately different from BE-H2's admin-only allow-list (CLAUDE.md >
- * Domain > Roles). Non-TESTER roles land on "/" (Overview) directly, so no
- * root redirect is needed anymore — the page renders in place.
+ * (it spans every page): TESTER can only ever be on /monitoring or /agenda
+ * (BE-H4a, widened in Phase 19 — Agenda is view-only and open to all three
+ * roles) — every other path, "/" included, bounces to /monitoring.
+ * Deny-everything-except, deliberately different from BE-H2's admin-only
+ * allow-list (CLAUDE.md > Domain > Roles) — this stays an explicit allow-list
+ * of the two paths, not a deny-list, even as the list grows. Non-TESTER
+ * roles land on "/" (Overview) directly, so no root redirect is needed
+ * anymore — the page renders in place.
  *
  * Role comes from the same JWT claims this middleware already reads via
  * getClaims() — no extra call, and no need for auth-guard.ts's
@@ -69,10 +72,12 @@ export async function middleware(request: NextRequest) {
 
   const role = roleFromAppMetadata(claims.app_metadata as Record<string, unknown> | undefined);
 
-  // TESTER can only ever be on Monitoring — bounce everything else, including
-  // "/" (Overview) and "/login". Non-TESTER roles fall through and get "/"
-  // (Overview) or whatever page they navigated to, rendered in place.
-  if (role === "TESTER" && !pathname.startsWith("/monitoring")) {
+  // TESTER can only ever be on Monitoring or the (Phase 19) view-only
+  // Agenda — bounce everything else, including "/" (Overview) and "/login".
+  // Non-TESTER roles fall through and get "/" (Overview) or whatever page
+  // they navigated to, rendered in place.
+  const TESTER_ALLOWED_PREFIXES = ["/monitoring", "/agenda"];
+  if (role === "TESTER" && !TESTER_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
     const url = request.nextUrl.clone();
     url.pathname = "/monitoring";
     return NextResponse.redirect(url);
