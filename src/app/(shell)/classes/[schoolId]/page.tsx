@@ -6,26 +6,34 @@ import { getKelasBySchoolId } from "@/lib/queries/kelas";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { KelasManager } from "@/components/admin/KelasManager";
 
-/** ADMIN and PIC_LAPANGAN both reach this one (PRD FR-9) — no extra role guard beyond the shell's own. */
-export default async function KelasManagementPage({
+/**
+ * Kelas manager (Phase 19, FE-S1) — relocated from /sekolah/[id]/kelas, same
+ * component (KelasManager) and actions (kelas.ts), reused as-is. ADMIN and
+ * PIC_LAPANGAN both reach this one (PRD FR-9) — no extra role guard beyond
+ * the shell's own, same as the route it replaces.
+ */
+export default async function ClassesManagementPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ schoolId: string }>;
 }) {
-  const { id } = await params;
-  const [school, kelas] = await Promise.all([getSchoolById(id), getKelasBySchoolId(id)]);
+  const { schoolId } = await params;
+  const [school, kelas] = await Promise.all([
+    getSchoolById(schoolId),
+    getKelasBySchoolId(schoolId),
+  ]);
   if (!school) notFound();
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <Link
-        href={`/sekolah/${school.id}`}
+        href="/classes"
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
         Kembali
       </Link>
-      <PageHeader title="Kelas & Tester" description={school.name} />
+      <PageHeader title="Classes" description={school.name} />
       <KelasManager schoolId={school.id} kelas={kelas} />
     </div>
   );

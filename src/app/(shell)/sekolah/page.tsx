@@ -1,12 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plus, Pencil, School } from "lucide-react";
 import { getSchools, type SchoolListItem } from "@/lib/queries/schools";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { DeleteSchoolButton } from "@/components/admin/DeleteSchoolButton";
+import { getCurrentRole } from "@/lib/auth-guard";
 
+/** ADMIN-only page (Phase 19, BE-P1) — PIC_LAPANGAN's Sidebar hides the link, but a direct URL must still bounce. */
 export default async function SchoolListPage() {
+  if ((await getCurrentRole()) !== "ADMIN") redirect("/");
+
   const schools = await getSchools();
 
   const columns: DataTableColumn<SchoolListItem>[] = [

@@ -14,11 +14,18 @@ import { prisma } from "@/lib/prisma";
 import { kelasNameSchema, kelasTesterSchema } from "@/lib/validations";
 import { requireStaff } from "@/lib/auth-guard";
 
-/** Kelas persists across events/years, so every event this school has ever had needs its Tester tab refreshed. */
-async function revalidateKelasPaths(schoolId: string) {
-  revalidatePath(`/sekolah/${schoolId}/kelas`);
-  const events = await prisma.psikotesEvent.findMany({ where: { schoolId }, select: { id: true } });
-  for (const event of events) revalidatePath(`/jadwal/${event.id}`);
+/**
+ * Kelas is shown in two places now (Phase 19): the editable Classes manager
+ * itself, and Monitoring's read-only "Kelas & Tester" tab (also feeds Cek
+ * Nama's kelas-count dropdown) — both need refreshing on every write. The
+ * Schedules event-detail "Tester" tab this used to also revalidate is gone
+ * (FE-S2, moved to Classes), so the old per-event `/jadwal/${id}` loop is
+ * gone too — Monitoring is keyed by schoolId directly, no event fan-out
+ * needed.
+ */
+function revalidateKelasPaths(schoolId: string) {
+  revalidatePath(`/classes/${schoolId}`);
+  revalidatePath(`/monitoring/${schoolId}`);
 }
 
 export async function createKelas(schoolId: string, formData: FormData): Promise<{ error?: string }> {
@@ -42,7 +49,7 @@ export async function createKelas(schoolId: string, formData: FormData): Promise
     return { error: "Gagal menambah kelas. Coba lagi." };
   }
 
-  await revalidateKelasPaths(schoolId);
+  revalidateKelasPaths(schoolId);
   return {};
 }
 
@@ -69,7 +76,7 @@ export async function updateKelas(id: string, formData: FormData): Promise<{ err
     return { error: "Gagal menyimpan kelas. Coba lagi." };
   }
 
-  await revalidateKelasPaths(schoolId);
+  revalidateKelasPaths(schoolId);
   return {};
 }
 
@@ -85,6 +92,6 @@ export async function deleteKelas(id: string): Promise<{ error?: string }> {
     return { error: "Gagal menghapus kelas. Coba lagi." };
   }
 
-  await revalidateKelasPaths(schoolId);
+  revalidateKelasPaths(schoolId);
   return {};
 }

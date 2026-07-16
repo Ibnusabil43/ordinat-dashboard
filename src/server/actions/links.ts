@@ -84,7 +84,8 @@ export async function upsertSubtestLinks(
     return { error: "Gagal menyimpan link. Coba lagi." };
   }
 
-  revalidatePath(`/jadwal/${eventId}/link`);
+  revalidatePath(`/links/${eventId}`);
+  revalidatePath("/links");
   revalidatePath(`/jadwal/${eventId}`);
   revalidatePath("/jadwal");
 

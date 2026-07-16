@@ -7,12 +7,8 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProgressStepper } from "@/components/ProgressStepper";
 import { StartPsikotesButton } from "@/components/admin/StartPsikotesButton";
-import { Tabs } from "@/components/Tabs";
-import { LinkTable, type LinkRow } from "@/components/LinkTable";
-import { CopyLinksButton } from "@/components/CopyLinksButton";
-import { TesterTable } from "@/components/TesterTable";
 import { resolveActiveSubtests } from "@/lib/constants";
-import { formatDateID, buildLinkCopyText } from "@/lib/format";
+import { formatDateID } from "@/lib/format";
 
 export default async function EventDetailPage({
   params,
@@ -23,21 +19,10 @@ export default async function EventDetailPage({
   const [event, role] = await Promise.all([getEventById(id), getCurrentRole()]);
   if (!event) notFound();
 
-  // This school's active subtests (defaults to all 13, school-level setting);
-  // merged with the event's saved links in canonical order.
+  // This school's active subtests (defaults to all 13, school-level
+  // setting) — only used here now for the "Kelola Link" count; the link
+  // table itself moved to its own Links menu (Phase 19, FE-T2).
   const activeSubtests = resolveActiveSubtests(event.school.activeSubtests);
-  const linkRows: LinkRow[] = activeSubtests.map((s) => {
-    const link = event.links.find((l) => l.subtestType.code === s.code);
-    return {
-      code: s.code,
-      label: s.label,
-      url: link?.url ?? null,
-      checkStatus: link?.checkStatus,
-      checkMessage: link?.checkMessage,
-    };
-  });
-
-  const testerRows = event.school.kelas.map((k) => ({ id: k.id, kelas: k.name, tester: k.tester }));
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
@@ -69,7 +54,7 @@ export default async function EventDetailPage({
           </Link>
           {role === "ADMIN" && (
             <Link
-              href={`/jadwal/${event.id}/link`}
+              href={`/links/${event.id}`}
               className="flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
             >
               <Link2 aria-hidden="true" size={16} />
@@ -77,36 +62,6 @@ export default async function EventDetailPage({
             </Link>
           )}
         </div>
-      </div>
-
-      {/* Link Subtes / Tester — relocated here from the removed public school page (v2.0) */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
-        <Tabs
-          tabs={[
-            {
-              key: "links",
-              label: "Link Subtes",
-              content: (
-                <div className="flex flex-col gap-4">
-                  <div className="flex justify-end">
-                    <CopyLinksButton
-                      text={buildLinkCopyText(
-                        event.school.name,
-                        linkRows.map((r) => ({ label: r.label, url: r.url ?? "" })),
-                      )}
-                    />
-                  </div>
-                  <LinkTable rows={linkRows} />
-                </div>
-              ),
-            },
-            {
-              key: "tester",
-              label: "Tester",
-              content: <TesterTable rows={testerRows} />,
-            },
-          ]}
-        />
       </div>
     </div>
   );

@@ -306,6 +306,8 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
       }),
   );
 
+  revalidatePath(`/links/${eventId}`);
+  revalidatePath("/links");
   revalidatePath("/jadwal");
   revalidatePath(`/jadwal/${eventId}`);
   revalidatePath(`/monitoring/${event.school.id}`);

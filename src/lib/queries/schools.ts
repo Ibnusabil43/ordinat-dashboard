@@ -45,6 +45,15 @@ export async function getSchoolById(id: string) {
   });
 }
 
+/** School list for the Classes menu (Phase 19, FE-S1) — id, name, and its kelas count for the row. */
+export async function getSchoolsForClasses() {
+  return prisma.school.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, _count: { select: { kelas: true } } },
+  });
+}
+export type SchoolForClasses = Awaited<ReturnType<typeof getSchoolsForClasses>>[number];
+
 /** Lean {id, name} list for select dropdowns (e.g. the event create form). */
 export async function getSchoolOptions() {
   return prisma.school.findMany({

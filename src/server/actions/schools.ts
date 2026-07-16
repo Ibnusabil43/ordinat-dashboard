@@ -2,7 +2,9 @@
 
 /**
  * School CRUD (BE-B1–B3). Every action:
- *  1. checks the session and role (requireStaff) — middleware is only the first layer,
+ *  1. checks the session and role (requireAdmin, tightened from requireStaff
+ *     in Phase 19 — BE-P1: PIC_LAPANGAN loses School access entirely, Schools
+ *     becomes ADMIN-only) — middleware is only the first layer,
  *  2. validates input with schoolSchema before touching Prisma,
  *  3. revalidates every path whose data changed.
  * See CLAUDE.md > Coding conventions.
@@ -10,8 +12,8 @@
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { schoolSchema, kelasNameSchema } from "@/lib/validations";
-import { requireStaff } from "@/lib/auth-guard";
+import { schoolSchema } from "@/lib/validations";
+import { requireAdmin } from "@/lib/auth-guard";
 import { parseActiveSubtests } from "@/lib/constants";
 
 export interface SchoolActionState {
@@ -32,17 +34,16 @@ function revalidateSchoolPaths() {
 }
 
 /**
- * Kelas can be named right here at creation (FE-M3, revised) — the form
- * submits one `kelasName` field per row. Each is trimmed and blanks dropped,
- * so an accidental empty row never creates a nameless kelas; order follows
- * the submitted order. Names still stay fully editable later via "Kelola
- * Kelas". Absent entirely = create no kelas.
+ * Phase 19 (FE-U1): the create form no longer bulk-creates kelas rows here —
+ * that's exclusively a Classes-menu action now (/classes/[schoolId] →
+ * createKelas, kelas.ts), done after the school already exists rather than
+ * as a create-time shortcut on this form.
  */
 export async function createSchool(
   _prevState: SchoolActionState | undefined,
   formData: FormData,
 ): Promise<SchoolActionState> {
-  const guard = await requireStaff();
+  const guard = await requireAdmin();
   if ("error" in guard) return { error: guard.error };
 
   const parsed = schoolSchema.safeParse({
@@ -57,32 +58,11 @@ export async function createSchool(
   }
 
   const { name, slug, driveRawSheetId, driveFormFolderId } = parsed.data;
-
-  // Parse the kelas name rows, dropping blanks. Cap at 50, same ceiling the
-  // old count-based field enforced.
-  const kelasNames = formData
-    .getAll("kelasName")
-    .map((v) => (typeof v === "string" ? kelasNameSchema.safeParse(v) : null))
-    .filter((r): r is { success: true; data: string } => Boolean(r?.success))
-    .map((r) => r.data)
-    .slice(0, 50);
-
   const activeSubtests = parseActiveSubtests(formData);
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const school = await tx.school.create({
-        data: { name, slug, driveRawSheetId, driveFormFolderId, activeSubtests },
-      });
-      if (kelasNames.length > 0) {
-        await tx.kelas.createMany({
-          data: kelasNames.map((kelasName, i) => ({
-            schoolId: school.id,
-            name: kelasName,
-            order: i,
-          })),
-        });
-      }
+    await prisma.school.create({
+      data: { name, slug, driveRawSheetId, driveFormFolderId, activeSubtests },
     });
   } catch (e) {
     if (isDuplicateSlug(e)) return { fieldErrors: { slug: DUPLICATE_SLUG_ERROR } };
@@ -98,7 +78,7 @@ export async function updateSchool(
   _prevState: SchoolActionState | undefined,
   formData: FormData,
 ): Promise<SchoolActionState> {
-  const guard = await requireStaff();
+  const guard = await requireAdmin();
   if ("error" in guard) return { error: guard.error };
 
   const parsed = schoolSchema.safeParse({
@@ -140,7 +120,7 @@ export async function updateSchool(
  * warn about that cascade before calling this.
  */
 export async function deleteSchool(id: string): Promise<{ error?: string }> {
-  const guard = await requireStaff();
+  const guard = await requireAdmin();
   if ("error" in guard) return { error: guard.error };
 
   try {

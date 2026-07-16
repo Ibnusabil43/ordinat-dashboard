@@ -33,9 +33,13 @@ export async function getEvents() {
 export type EventListItem = Awaited<ReturnType<typeof getEvents>>[number];
 
 /**
- * Single event by id, or null. Includes the school (with its kelas, for the
- * detail page's "Tester" tab — BE-G3, v2.0), its links (with subtest type),
- * and the most recent recap job — enough for the detail page.
+ * Single event by id, or null. Includes the school, its links (with subtest
+ * type), and the most recent recap job — enough for the detail page.
+ *
+ * Phase 19 (BE-P1/FE-S2): school.kelas used to be selected here for the
+ * detail page's now-removed "Tester" tab (kelas/tester management moved to
+ * its own Classes menu, /classes/[schoolId]) — dropped since nothing in this
+ * query's result shape consumes it anymore.
  */
 export async function getEventById(id: string) {
   return prisma.psikotesEvent.findUnique({
@@ -51,10 +55,6 @@ export async function getEventById(id: string) {
           slug: true,
           activeSubtests: true,
           driveFormFolderId: true,
-          kelas: {
-            orderBy: { order: "asc" },
-            select: { id: true, name: true, tester: true },
-          },
         },
       },
       _count: { select: { links: { where: FILLED_LINK_WHERE } } },
@@ -146,3 +146,23 @@ export async function getRecapPickerEvents() {
 }
 
 export type RecapPickerEventOption = Awaited<ReturnType<typeof getRecapPickerEvents>>[number];
+
+/**
+ * Every event for the Agenda view (Phase 19, BE-P2) — read-only, no role
+ * gate (TESTER reaches /agenda too, same reasoning as Monitoring's read
+ * paths). Ascending by scheduledDate; `groupAgendaEvents` (src/lib/agenda.ts)
+ * buckets these into Upcoming / This week / Past and re-sorts each bucket.
+ */
+export async function getAgendaEvents() {
+  return prisma.psikotesEvent.findMany({
+    orderBy: { scheduledDate: "asc" },
+    select: {
+      id: true,
+      scheduledDate: true,
+      status: true,
+      school: { select: { id: true, name: true } },
+    },
+  });
+}
+
+export type AgendaEventItem = Awaited<ReturnType<typeof getAgendaEvents>>[number];
