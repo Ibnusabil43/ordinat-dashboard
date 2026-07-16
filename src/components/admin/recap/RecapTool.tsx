@@ -106,7 +106,7 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
         body: JSON.stringify({ decisions }),
       });
     } catch {
-      setError("Gagal mengirim review.");
+      setError("Failed to submit review.");
     }
     setReviewBusy(false);
   };
@@ -154,7 +154,7 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
       }
       setJobId(d.job_id);
     } catch (e) {
-      setError(`Gagal mengirim: ${e instanceof Error ? e.message : String(e)}`);
+      setError(`Failed to submit: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
@@ -217,14 +217,14 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
       {rekapWarning && (
         <div className="flex items-start justify-between gap-3 rounded-2xl border border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 sm:p-6">
           <span>
-            <strong>Status jadwal:</strong> {rekapWarning} Proses file tetap berjalan.
+            <strong>Schedule status:</strong> {rekapWarning} File processing continues regardless.
           </span>
           <button
             type="button"
             onClick={() => setRekapWarning(null)}
             className="shrink-0 cursor-pointer text-xs font-medium text-zinc-500 hover:text-zinc-900"
           >
-            Tutup
+            Dismiss
           </button>
         </div>
       )}

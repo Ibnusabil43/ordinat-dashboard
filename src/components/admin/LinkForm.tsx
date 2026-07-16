@@ -20,7 +20,7 @@ function SaveBar() {
         disabled={pending}
         className="flex h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
       >
-        {pending ? "Menyimpan..." : "Simpan Link"}
+        {pending ? "Saving..." : "Save Links"}
       </button>
     </div>
   );
@@ -76,7 +76,7 @@ export function LinkForm({
         })}
       </div>
 
-      {state?.success && <p className="text-sm text-zinc-500">Tersimpan.</p>}
+      {state?.success && <p className="text-sm text-zinc-500">Saved.</p>}
       {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
 
       <SaveBar />

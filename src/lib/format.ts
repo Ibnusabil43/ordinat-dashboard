@@ -3,14 +3,14 @@
  * format in UTC to avoid a timezone shift moving the calendar day.
  */
 
-const idDate = new Intl.DateTimeFormat("id-ID", {
+const enDate = new Intl.DateTimeFormat("en-US", {
   dateStyle: "long",
   timeZone: "UTC",
 });
 
-/** e.g. "1 Agustus 2026" */
-export function formatDateID(date: Date): string {
-  return idDate.format(date);
+/** e.g. "August 1, 2026" */
+export function formatDate(date: Date): string {
+  return enDate.format(date);
 }
 
 /** "YYYY-MM-DD" for prefilling an <input type="date">. */
@@ -49,5 +49,5 @@ export function buildLinkCopyText(
   links: { label: string; url: string }[],
 ): string {
   const lines = links.filter((l) => l.url).map((l) => `${l.label} : ${l.url}`);
-  return [`LINK PSIKOTES ${schoolName.toUpperCase()}`, ...lines].join("\n");
+  return [`PSYCHOTEST LINKS ${schoolName.toUpperCase()}`, ...lines].join("\n");
 }

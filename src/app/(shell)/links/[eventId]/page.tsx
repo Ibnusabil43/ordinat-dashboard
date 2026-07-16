@@ -6,20 +6,25 @@ import { upsertSubtestLinks } from "@/server/actions/links";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { LinkForm } from "@/components/admin/LinkForm";
 import { CheckLinksPanel } from "@/components/admin/CheckLinksPanel";
-import { formatDateID } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { resolveActiveSubtests } from "@/lib/constants";
 import { getCurrentRole } from "@/lib/auth-guard";
 
-/** ADMIN-only page (BE-H2) — PIC_LAPANGAN's Sidebar hides the link, but a direct URL must still bounce. */
+/**
+ * Link management (Phase 19, FE-T1) — relocated from /jadwal/[id]/link, same
+ * component (LinkForm/CheckLinksPanel) and action (upsertSubtestLinks),
+ * reused as-is. ADMIN-only page (BE-H2/BE-P1) — PIC_LAPANGAN's Sidebar hides
+ * the link, but a direct URL must still bounce.
+ */
 export default async function LinkManagementPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ eventId: string }>;
 }) {
   if ((await getCurrentRole()) !== "ADMIN") redirect("/");
 
-  const { id } = await params;
-  const event = await getEventById(id);
+  const { eventId } = await params;
+  const event = await getEventById(eventId);
   if (!event) notFound();
 
   const existing = Object.fromEntries(event.links.map((l) => [l.subtestType.code, l.url]));
@@ -27,16 +32,16 @@ export default async function LinkManagementPage({
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <Link
-        href={`/jadwal/${event.id}`}
+        href="/links"
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
-        Kembali
+        Back
       </Link>
 
       <PageHeader
-        title="Manajemen Link"
-        description={`${event.school.name} — ${formatDateID(event.scheduledDate)}`}
+        title="Links"
+        description={`${event.school.name} — ${event.scheduledDate ? formatDate(event.scheduledDate) : "Date not set yet"}`}
       />
 
       <CheckLinksPanel eventId={event.id} />

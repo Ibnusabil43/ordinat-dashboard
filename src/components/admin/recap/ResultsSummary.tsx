@@ -21,20 +21,20 @@ export type DriveUploadState =
 function DriveUploadStatus({ state }: { state: DriveUploadState }) {
   if (state.status === "idle") return null;
   if (state.status === "uploading") {
-    return <span className="flex items-center gap-1.5 text-xs text-zinc-500">Menyimpan ke Drive...</span>;
+    return <span className="flex items-center gap-1.5 text-xs text-zinc-500">Saving to Drive...</span>;
   }
   if (state.status === "success") {
     return (
       <span className="flex items-center gap-1.5 text-xs text-zinc-500">
         <Cloud aria-hidden="true" size={14} />
-        Hasil tersimpan ke Drive
+        Saved to Drive
       </span>
     );
   }
   return (
     <span className="flex items-center gap-1.5 text-xs text-zinc-400" title={state.message}>
       <CloudOff aria-hidden="true" size={14} />
-      Gagal menyimpan ke Drive
+      Failed to save to Drive
     </span>
   );
 }
@@ -43,7 +43,7 @@ function StatCard({ icon: Icon, value, label }: { icon: typeof CheckCheck; value
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-center">
       <Icon aria-hidden="true" size={18} className="mx-auto text-zinc-400" />
-      <div className="mt-2 font-mono text-2xl font-bold text-zinc-900">{(value || 0).toLocaleString("id-ID")}</div>
+      <div className="mt-2 font-mono text-2xl font-bold text-zinc-900">{(value || 0).toLocaleString("en-US")}</div>
       <div className="mt-1 text-xs tracking-wide text-zinc-500 uppercase">{label}</div>
     </div>
   );
@@ -82,7 +82,7 @@ export function ResultsSummary({
             className="flex h-10 w-fit items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
           >
             <Download aria-hidden="true" size={16} />
-            Download Hasil
+            Download Result
           </a>
           <DriveUploadStatus state={driveUpload} />
         </div>
@@ -90,21 +90,21 @@ export function ResultsSummary({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard icon={CheckCheck} value={log.total_scores} label="Scores" />
-        <StatCard icon={IdCard} value={log.identity_filled} label="Identitas" />
-        <StatCard icon={AlertTriangle} value={log.yellow_count} label="Kuning" />
-        <StatCard icon={Shuffle} value={log.cross_kelas} label="Cross-Kelas" />
+        <StatCard icon={IdCard} value={log.identity_filled} label="Identity" />
+        <StatCard icon={AlertTriangle} value={log.yellow_count} label="Flagged" />
+        <StatCard icon={Shuffle} value={log.cross_kelas} label="Cross-Class" />
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-zinc-900">Detail per Gugus</h2>
+        <h2 className="text-lg font-semibold text-zinc-900">Detail by Gugus</h2>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs font-medium text-zinc-500">
                 <th className="px-2 py-2">Gugus</th>
-                <th className="px-2 py-2">Siswa</th>
+                <th className="px-2 py-2">Students</th>
                 <th className="px-2 py-2">Progress</th>
-                <th className="px-2 py-2">Kuning</th>
+                <th className="px-2 py-2">Flagged</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -142,15 +142,15 @@ export function ResultsSummary({
 
       {log.yellow_detail.length > 0 && (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-zinc-900">Siswa Tidak Ada Data (Kuning)</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">Students With No Data (Flagged)</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Kemungkinan tidak hadir saat tes atau data tidak tersedia di RAW.
+            Likely absent during the test, or the data isn&rsquo;t available in RAW.
           </p>
           <div className="mt-4 flex flex-col gap-3">
             {log.yellow_detail.map((g) => (
               <div key={g.gugus} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                 <div className="text-xs font-semibold text-zinc-900">
-                  Gugus {g.gugus} — {g.names.length} siswa
+                  Gugus {g.gugus} — {g.names.length} students
                 </div>
                 {g.names.map((n, j) => (
                   <div key={j} className="mt-1 text-xs text-zinc-500">
@@ -165,17 +165,17 @@ export function ResultsSummary({
 
       {log.unmatched_summary.length > 0 && (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-zinc-900">Subtes Tidak Lengkap</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">Incomplete Subtests</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Siswa hadir tapi beberapa subtes tidak ditemukan di RAW.
+            Student was present, but some subtests weren&rsquo;t found in RAW.
           </p>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 text-left text-xs font-medium text-zinc-500">
                   <th className="px-2 py-2">Gugus</th>
-                  <th className="px-2 py-2">Nama</th>
-                  <th className="px-2 py-2">Subtes Kosong</th>
+                  <th className="px-2 py-2">Name</th>
+                  <th className="px-2 py-2">Missing Subtests</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">

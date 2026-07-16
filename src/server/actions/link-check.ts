@@ -104,11 +104,11 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
       },
     },
   });
-  if (!event) return { error: "Jadwal tidak ditemukan." };
+  if (!event) return { error: "Schedule not found." };
   if (!event.school.driveFormFolderId) {
     return {
       error:
-        "Folder Drive form belum diatur untuk sekolah ini. Atur dulu Drive Form Folder ID di Manajemen Sekolah.",
+        "This school's Drive form folder isn't set up yet. Set Drive Form Folder ID in Schools first.",
     };
   }
 
@@ -125,7 +125,7 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
   } catch {
     return {
       error:
-        "Gagal membaca folder Drive sekolah ini (timeout atau akses ditolak). Pastikan folder sudah dibagikan ke service account, dan Google Drive API + Forms API sudah aktif di Google Cloud Console.",
+        "Failed to read this school's Drive folder (timeout or access denied). Make sure the folder is shared with the service account, and the Google Drive API + Forms API are enabled in Google Cloud Console.",
     };
   }
 
@@ -169,7 +169,7 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
             label: s.label,
             status: "not_found",
             message:
-              "Link tidak mengarah ke Google Form — kemungkinan tiny.cc-nya belum dibuat atau rusak.",
+              "This link doesn't point to a Google Form — the tiny.cc link may not be set up yet, or may be broken.",
           });
         }
       } catch {
@@ -177,7 +177,7 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
           code: s.code,
           label: s.label,
           status: "error",
-          message: "Gagal membuka link — cek koneksi atau link-nya rusak.",
+          message: "Failed to open the link — check the connection or the link may be broken.",
         });
       }
     }),
@@ -226,14 +226,14 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
           label: p.label,
           status: "wrong_school",
           matchedTitle: foundElsewhere.title,
-          message: `Link ini mengarah ke form milik "${foundElsewhere.schoolName}" (judul: "${foundElsewhere.title}"), bukan sekolah ini.`,
+          message: `This link points to a form belonging to "${foundElsewhere.schoolName}" (title: "${foundElsewhere.title}"), not this school.`,
         });
       } else {
         results.push({
           code: p.code,
           label: p.label,
           status: "not_found",
-          message: "Link tidak mengarah ke form manapun di folder sekolah ini maupun sekolah lain.",
+          message: "This link doesn't point to any form in this school's folder or any other configured school's folder.",
         });
       }
     }
@@ -260,9 +260,9 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
       if (!r) continue;
       const others = codes.filter((c) => c !== code);
       r.status = "duplicate";
-      r.message = `Link ini mengarah ke form yang sama dengan subtes ${others.join(
+      r.message = `This link points to the same form as subtest ${others.join(
         ", ",
-      )} — tiap subtes harus punya Google Form sendiri.`;
+      )} — every subtest needs its own Google Form.`;
     }
   }
 
@@ -285,7 +285,7 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
     const otherCode = activeCodes.find((c) => c !== s.code && titleTokens.has(c));
     if (otherCode) {
       r.status = "title_mismatch";
-      r.message = `Judul form "${r.matchedTitle}" mengandung kode subtes ${otherCode}, bukan ${s.code} — kemungkinan link-nya tertukar.`;
+      r.message = `The form title "${r.matchedTitle}" contains subtest code ${otherCode}, not ${s.code} — the links may be swapped.`;
     }
   }
 
@@ -306,6 +306,8 @@ export async function checkSubtestLinks(eventId: string): Promise<LinkCheckState
       }),
   );
 
+  revalidatePath(`/links/${eventId}`);
+  revalidatePath("/links");
   revalidatePath("/jadwal");
   revalidatePath(`/jadwal/${eventId}`);
   revalidatePath(`/monitoring/${event.school.id}`);

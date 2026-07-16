@@ -54,18 +54,18 @@ export function UploadForm({
       className={clsx("m-0 flex flex-col gap-6 border-0 p-0", formDisabled && "opacity-50")}
     >
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-zinc-900">Upload File</h2>
-        <p className="mt-1 text-sm text-zinc-500">Rekap = sumber kebenaran nama &amp; kelas.</p>
+        <h2 className="text-lg font-semibold text-zinc-900">Upload Files</h2>
+        <p className="mt-1 text-sm text-zinc-500">Recap = the source of truth for names &amp; classes.</p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FileDropzone
-            label="File RAW"
-            hint="Data Google Forms (.xlsx)"
+            label="RAW File"
+            hint="Google Forms data (.xlsx)"
             file={rawFile}
             onChange={onRawFile}
           />
           <FileDropzone
-            label="File Rekap"
-            hint="Template Gugus (.xlsx)"
+            label="Recap File"
+            hint="Gugus template (.xlsx)"
             file={rekapFile}
             onChange={onRekapFile}
           />
@@ -73,14 +73,14 @@ export function UploadForm({
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-zinc-900">Field Seragam</h2>
+        <h2 className="text-lg font-semibold text-zinc-900">Uniform Fields</h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Isi agar kolom TGL Pemeriksaan dan Pendidikan diseragamkan untuk semua siswa.
+          Fill in so the Test Date and Education columns are the same for every student.
         </p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-zinc-900">
-              Tanggal Pemeriksaan (DD/MM/YYYY)
+              Test Date (DD/MM/YYYY)
             </label>
             <input
               className={inputClass}
@@ -90,7 +90,7 @@ export function UploadForm({
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-zinc-900">Pendidikan</label>
+            <label className="mb-1.5 block text-sm font-medium text-zinc-900">Education</label>
             <input
               className={inputClass}
               value={pendidikan}
@@ -107,7 +107,7 @@ export function UploadForm({
           onClick={() => setAdvancedOpen((v) => !v)}
           className="flex w-full cursor-pointer items-center justify-between text-sm font-medium text-zinc-500 hover:text-zinc-900"
         >
-          Pengaturan Lanjutan
+          Advanced Settings
           <span aria-hidden="true">{advancedOpen ? "▾" : "▸"}</span>
         </button>
         {advancedOpen && (
@@ -145,7 +145,7 @@ export function UploadForm({
         className="flex h-10 w-fit cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Play aria-hidden="true" size={16} />
-        {processing ? "Memproses..." : "Proses Otomatis"}
+        {processing ? "Processing..." : "Auto Process"}
       </button>
     </fieldset>
   );

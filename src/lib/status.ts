@@ -1,25 +1,25 @@
 /**
- * Status lifecycle untuk PsikotesEvent — SATU-SATUNYA sumber kebenaran.
- * Jangan hardcode string status di tempat lain; impor dari sini.
+ * Status lifecycle for PsikotesEvent — the SINGLE source of truth.
+ * Never hardcode a status string elsewhere; import from here.
  *
- * Alur: SCHEDULED -> ONGOING -> REKAP -> DONE (maju satu arah, tidak boleh mundur).
+ * Flow: SCHEDULED -> ONGOING -> REKAP -> DONE (one direction only, never backward).
  */
 
 export const EVENT_STATUSES = ["SCHEDULED", "ONGOING", "REKAP", "DONE"] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
-/** Label bahasa Indonesia yang tampil di UI. */
+/** Label shown in the UI (English — see CLAUDE.md > Coding conventions). */
 export const STATUS_LABEL: Record<EventStatus, string> = {
-  SCHEDULED: "Terjadwal",
-  ONGOING: "Sedang Psikotes",
-  REKAP: "Tahap Rekap",
-  DONE: "Tahap Resume",
+  SCHEDULED: "Scheduled",
+  ONGOING: "Testing in Progress",
+  REKAP: "Recap Stage",
+  DONE: "Completed",
 };
 
 /**
- * Representasi visual monokrom. Status TIDAK dibedakan lewat hue,
- * melainkan intensitas abu-abu + ikon (lihat design system di CLAUDE.md).
- * `icon` mengacu ke nama ikon lucide-react.
+ * Monochrome visual representation. Status is distinguished by grayscale
+ * intensity + icon, NOT hue (see the design system in CLAUDE.md).
+ * `icon` refers to a lucide-react icon name.
  */
 export const STATUS_STYLE: Record<
   EventStatus,
@@ -31,10 +31,10 @@ export const STATUS_STYLE: Record<
   DONE: { fill: "bg-zinc-900", text: "text-white", icon: "CheckCheck" },
 };
 
-/** Urutan tahap untuk progress stepper. */
+/** Stage order for the progress stepper. */
 export const STATUS_ORDER: EventStatus[] = [...EVENT_STATUSES];
 
-/** Transisi yang diizinkan. Kunci = status sekarang, nilai = status tujuan yang sah. */
+/** Allowed transitions. Key = current status, value = legal destination statuses. */
 const ALLOWED_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
   SCHEDULED: ["ONGOING"],
   ONGOING: ["REKAP"],
@@ -46,17 +46,17 @@ export function canTransition(from: EventStatus, to: EventStatus): boolean {
   return ALLOWED_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
-/** Melempar error kalau transisi tidak sah — dipakai di server action & webhook internal. */
+/** Throws if the transition isn't legal — used by server actions & the internal webhook. */
 export function assertTransition(from: EventStatus, to: EventStatus): void {
   if (!canTransition(from, to)) {
     throw new Error(
-      `Transisi status tidak sah: ${from} -> ${to}. ` +
-        `Alur wajib SCHEDULED -> ONGOING -> REKAP -> DONE.`,
+      `Invalid status transition: ${from} -> ${to}. ` +
+        `Flow must go SCHEDULED -> ONGOING -> REKAP -> DONE.`,
     );
   }
 }
 
-/** Progress 0..3 untuk stepper. */
+/** Progress 0..3 for the stepper. */
 export function statusIndex(status: EventStatus): number {
   return STATUS_ORDER.indexOf(status);
 }

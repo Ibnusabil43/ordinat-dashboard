@@ -1,88 +1,67 @@
 "use server";
 
 /**
- * Event lifecycle actions (BE-C1–C3). markResume (REKAP→DONE) is Phase 7.
+ * Event lifecycle actions. markResume (REKAP→DONE) is Phase 7.
  *
- * Status is NEVER set through create/update — the state machine owns it.
- * advanceToOngoing goes through assertTransition, so an illegal jump is
- * rejected server-side even if a stale UI offered the button.
- * See CLAUDE.md > Domain and Coding conventions.
+ * Status is NEVER set through these actions except via assertTransition —
+ * the state machine owns it. advanceToOngoing goes through assertTransition,
+ * so an illegal jump is rejected server-side even if a stale UI offered the
+ * button. See CLAUDE.md > Domain and Coding conventions.
+ *
+ * (User request, post-19-7): createEvent/updateEvent and their shared
+ * eventSchema are gone — a school's PsikotesEvent is now always created
+ * alongside the school itself (schools.ts's createSchool), never
+ * standalone. The only remaining mutation here for scheduling is
+ * updateEventDate, called from the inline date editor on the schedule's own
+ * detail page (no separate route).
  */
 import { prisma } from "@/lib/prisma";
-import { eventSchema } from "@/lib/validations";
+import { scheduledDateSchema } from "@/lib/validations";
 import { assertTransition } from "@/lib/status";
 import { requireStaff, requireAdmin } from "@/lib/auth-guard";
 import { revalidateEventPaths } from "@/lib/event-paths";
 
-export interface EventActionState {
+export interface UpdateEventDateState {
   error?: string;
-  fieldErrors?: { schoolId?: string; scheduledDate?: string };
 }
 
-function parseEvent(formData: FormData) {
-  return eventSchema.safeParse({
-    schoolId: formData.get("schoolId"),
-    scheduledDate: formData.get("scheduledDate"),
-  });
-}
-
-function fieldErrorsFrom(parsed: ReturnType<typeof parseEvent>): EventActionState {
-  if (parsed.success) return {};
-  const f = parsed.error.flatten().fieldErrors;
-  return { fieldErrors: { schoolId: f.schoolId?.[0], scheduledDate: f.scheduledDate?.[0] } };
-}
-
-export async function createEvent(
-  _prevState: EventActionState | undefined,
-  formData: FormData,
-): Promise<EventActionState> {
-  const guard = await requireStaff();
-  if ("error" in guard) return { error: guard.error };
-
-  const parsed = parseEvent(formData);
-  if (!parsed.success) return fieldErrorsFrom(parsed);
-
-  try {
-    // status defaults to SCHEDULED in the schema — not set here on purpose.
-    await prisma.psikotesEvent.create({
-      data: parsed.data,
-    });
-  } catch {
-    return { error: "Gagal menyimpan jadwal. Coba lagi." };
-  }
-
-  revalidateEventPaths();
-  return {};
-}
-
-export async function updateEvent(
+/**
+ * Sets or changes a schedule's date — the only field the inline editor on
+ * the detail page can touch. Works the same whether the event currently has
+ * no date ("Date not set yet") or is being rescheduled; status is untouched
+ * either way.
+ */
+export async function updateEventDate(
   id: string,
-  _prevState: EventActionState | undefined,
+  _prevState: UpdateEventDateState | undefined,
   formData: FormData,
-): Promise<EventActionState> {
+): Promise<UpdateEventDateState> {
   const guard = await requireStaff();
   if ("error" in guard) return { error: guard.error };
 
-  const parsed = parseEvent(formData);
-  if (!parsed.success) return fieldErrorsFrom(parsed);
+  const parsed = scheduledDateSchema.safeParse(formData.get("scheduledDate"));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   try {
-    // Only schoolId + scheduledDate change here; status is untouched.
     await prisma.psikotesEvent.update({
       where: { id },
-      data: parsed.data,
+      data: { scheduledDate: parsed.data },
     });
-    revalidateEventPaths({ id });
   } catch {
-    return { error: "Gagal memperbarui jadwal. Coba lagi." };
+    return { error: "Failed to update schedule. Try again." };
   }
 
+  revalidateEventPaths({ id });
   return {};
 }
 
 /**
- * SCHEDULED → ONGOING. The only forward transition an admin triggers in the UI
- * (markResume handles REKAP → DONE in Phase 7). Guarded by assertTransition.
+ * SCHEDULED → ONGOING. The only forward transition an admin triggers in the
+ * UI (markResume handles REKAP → DONE in Phase 7). Guarded by
+ * assertTransition. Also requires a real scheduledDate — the UI already
+ * hides "Mulai Psikotes" until a date is set (StartPsikotesButton's caller),
+ * but this is the server-side half of that same guard, same defense-in-depth
+ * pattern as every other action here.
  */
 export async function advanceToOngoing(id: string): Promise<{ error?: string }> {
   const guard = await requireStaff();
@@ -90,20 +69,21 @@ export async function advanceToOngoing(id: string): Promise<{ error?: string }> 
 
   const event = await prisma.psikotesEvent.findUnique({
     where: { id },
-    select: { status: true },
+    select: { status: true, scheduledDate: true },
   });
-  if (!event) return { error: "Jadwal tidak ditemukan." };
+  if (!event) return { error: "Schedule not found." };
+  if (!event.scheduledDate) return { error: "Set a test date before starting." };
 
   try {
     assertTransition(event.status, "ONGOING");
   } catch {
-    return { error: "Status jadwal tidak bisa diubah dari kondisi saat ini." };
+    return { error: "Schedule status can't be changed from its current state." };
   }
 
   try {
     await prisma.psikotesEvent.update({ where: { id }, data: { status: "ONGOING" } });
   } catch {
-    return { error: "Gagal mengubah status. Coba lagi." };
+    return { error: "Failed to change status. Try again." };
   }
 
   revalidateEventPaths({ id });
@@ -124,12 +104,12 @@ export async function markResume(id: string): Promise<{ error?: string }> {
     where: { id },
     select: { status: true },
   });
-  if (!event) return { error: "Jadwal tidak ditemukan." };
+  if (!event) return { error: "Schedule not found." };
 
   try {
     assertTransition(event.status, "DONE");
   } catch {
-    return { error: "Jadwal ini tidak sedang dalam tahap rekap." };
+    return { error: "This schedule isn't currently in the recap stage." };
   }
 
   try {
@@ -143,7 +123,7 @@ export async function markResume(id: string): Promise<{ error?: string }> {
       }),
     ]);
   } catch {
-    return { error: "Gagal menyelesaikan rekap. Coba lagi." };
+    return { error: "Failed to complete recap. Try again." };
   }
 
   revalidateEventPaths({ id });

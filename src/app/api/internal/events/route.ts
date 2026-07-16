@@ -6,7 +6,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { EVENT_STATUSES, type EventStatus } from "@/lib/status";
-import { getOngoingEventsForPicker } from "@/lib/queries/events";
+import { getOngoingEventsForPicker, withDate } from "@/lib/queries/events";
 import { isValidRecapToken } from "@/lib/recap-auth";
 
 export async function GET(request: Request) {
@@ -26,15 +26,17 @@ export async function GET(request: Request) {
   const events =
     status === "ONGOING"
       ? await getOngoingEventsForPicker()
-      : await prisma.psikotesEvent.findMany({
-          where: { status },
-          orderBy: { scheduledDate: "desc" },
-          select: {
-            id: true,
-            scheduledDate: true,
-            school: { select: { name: true, slug: true } },
-          },
-        });
+      : withDate(
+          await prisma.psikotesEvent.findMany({
+            where: { status },
+            orderBy: { scheduledDate: "desc" },
+            select: {
+              id: true,
+              scheduledDate: true,
+              school: { select: { name: true, slug: true } },
+            },
+          }),
+        );
 
   return NextResponse.json({
     status,

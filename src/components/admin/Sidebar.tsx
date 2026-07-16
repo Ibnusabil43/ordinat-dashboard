@@ -7,9 +7,12 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   School,
+  GraduationCap,
   CalendarDays,
+  Link2,
   ClipboardList,
   FileSpreadsheet,
+  CalendarRange,
   Activity,
   LogOut,
   Menu,
@@ -21,26 +24,53 @@ import { clsx } from "clsx";
 import { signOutAction } from "@/server/actions/auth";
 import type { Role } from "@/lib/roles";
 
+/**
+ * Phase 19 menu restructure — labels are English now, a scoped, confirmed
+ * override of CLAUDE.md's Indonesian-UI rule for menu labels + new-feature
+ * copy only (page bodies stay as they are until their own slice touches
+ * them). Hrefs for not-yet-relocated menus (Schools, Schedules, Recap) still
+ * point at their existing route segments — only Classes/Links/Agenda are
+ * genuinely new routes (stubbed until slices 19-2/3/6 fill them in). See
+ * ROADMAP.md Phase 19 for the full slice breakdown.
+ */
 const MENU: { href: string; label: string; icon: LucideIcon; roles: Role[] }[] = [
   { href: "/", label: "Overview", icon: LayoutDashboard, roles: ["ADMIN", "PIC_LAPANGAN"] },
   {
     href: "/sekolah",
-    label: "Manajemen Sekolah",
+    label: "Schools",
     icon: School,
+    roles: ["ADMIN"], // Phase 19, BE-P1: tightened from ADMIN+PIC — PIC loses School access
+  },
+  {
+    href: "/classes",
+    label: "Classes",
+    icon: GraduationCap,
     roles: ["ADMIN", "PIC_LAPANGAN"],
   },
   {
     href: "/jadwal",
-    label: "Manajemen Jadwal",
+    label: "Schedules",
     icon: CalendarDays,
     roles: ["ADMIN", "PIC_LAPANGAN"],
   },
-  { href: "/rekap", label: "Menu Rekap", icon: ClipboardList, roles: ["ADMIN"] },
+  {
+    href: "/links",
+    label: "Links",
+    icon: Link2,
+    roles: ["ADMIN"],
+  },
+  { href: "/rekap", label: "Recap", icon: ClipboardList, roles: ["ADMIN"] },
   {
     href: "/automated-recap",
     label: "Automated Recap",
     icon: FileSpreadsheet,
     roles: ["ADMIN"],
+  },
+  {
+    href: "/agenda",
+    label: "Agenda",
+    icon: CalendarRange,
+    roles: ["ADMIN", "PIC_LAPANGAN", "TESTER"],
   },
   {
     href: "/monitoring",

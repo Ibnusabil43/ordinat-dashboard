@@ -24,9 +24,9 @@ export async function getCurrentRole(): Promise<Role> {
   return roleFromAppMetadata((await getCurrentUser())?.app_metadata);
 }
 
-export const SESSION_EXPIRED_ERROR = "Sesi berakhir. Silakan masuk kembali.";
-export const ADMIN_ONLY_ERROR = "Menu ini khusus admin.";
-export const TESTER_FORBIDDEN_ERROR = "Menu ini tidak tersedia untuk akun tester.";
+export const SESSION_EXPIRED_ERROR = "Session expired. Please sign in again.";
+export const ADMIN_ONLY_ERROR = "This menu is admin-only.";
+export const TESTER_FORBIDDEN_ERROR = "This menu isn't available to tester accounts.";
 
 /**
  * Guard for every general admin action (BE-H4b) — logged in AND not a

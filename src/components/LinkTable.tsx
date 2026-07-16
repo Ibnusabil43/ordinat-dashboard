@@ -30,10 +30,10 @@ function StatusBadge({ row }: { row: LinkRow }) {
   const status = row.checkStatus ?? null;
   const config: Record<string, { label: string; cls: string; icon: typeof CheckCircle2 }> = {
     match: { label: "OK", cls: "bg-emerald-50 text-emerald-700", icon: CheckCircle2 },
-    wrong_school: { label: "Sekolah lain", cls: "bg-red-50 text-red-700", icon: AlertTriangle },
-    duplicate: { label: "Duplikat", cls: "bg-red-50 text-red-700", icon: AlertTriangle },
-    title_mismatch: { label: "Judul beda", cls: "bg-amber-50 text-amber-700", icon: AlertTriangle },
-    not_found: { label: "Tidak ketemu", cls: "bg-amber-50 text-amber-700", icon: AlertTriangle },
+    wrong_school: { label: "Wrong school", cls: "bg-red-50 text-red-700", icon: AlertTriangle },
+    duplicate: { label: "Duplicate", cls: "bg-red-50 text-red-700", icon: AlertTriangle },
+    title_mismatch: { label: "Title mismatch", cls: "bg-amber-50 text-amber-700", icon: AlertTriangle },
+    not_found: { label: "Not found", cls: "bg-amber-50 text-amber-700", icon: AlertTriangle },
     error: { label: "Error", cls: "bg-amber-50 text-amber-700", icon: AlertTriangle },
   };
   const c = status ? config[status] : undefined;
@@ -41,7 +41,7 @@ function StatusBadge({ row }: { row: LinkRow }) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500">
         <CircleDashed aria-hidden="true" size={12} />
-        Belum dicek
+        Not checked
       </span>
     );
   }
@@ -64,14 +64,14 @@ function StatusBadge({ row }: { row: LinkRow }) {
  * not hidden — an in-progress setup shouldn't look broken. A row whose last
  * "Cek Link" result was bad shows that warning inline, right under the URL —
  * this is a passive display (reads whatever was last persisted), it never
- * triggers a live check itself; only the "Cek Link" button on Manajemen
- * Link does that.
+ * triggers a live check itself; only the "Cek Link" button on the Links
+ * menu does that.
  */
 export function LinkTable({ rows }: { rows: LinkRow[] }) {
   const columns: DataTableColumn<LinkRow>[] = [
     {
       key: "label",
-      header: "Subtes",
+      header: "Subtest",
       render: (r) => <span className="font-medium text-zinc-900">{r.label}</span>,
     },
     {
@@ -90,7 +90,7 @@ export function LinkTable({ rows }: { rows: LinkRow[] }) {
               <ExternalLink aria-hidden="true" size={12} />
             </a>
           ) : (
-            <span className="text-xs text-zinc-400">Belum tersedia</span>
+            <span className="text-xs text-zinc-400">Not available yet</span>
           )}
           {r.checkStatus && BAD_CHECK_STATUSES.has(r.checkStatus) && r.checkMessage && (
             <span className="inline-flex items-start gap-1 text-xs text-amber-700">

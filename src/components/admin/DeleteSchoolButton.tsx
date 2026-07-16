@@ -41,7 +41,7 @@ export function DeleteSchoolButton({
     <>
       <button
         type="button"
-        aria-label={`Hapus ${name}`}
+        aria-label={`Delete ${name}`}
         onClick={() => setOpen(true)}
         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-zinc-500 transition hover:bg-red-50 hover:text-red-600"
       >
@@ -50,22 +50,22 @@ export function DeleteSchoolButton({
 
       <ConfirmModal
         open={open}
-        title="Hapus sekolah?"
+        title="Delete school?"
         description={
           <>
-            Menghapus <span className="font-medium text-zinc-900">{name}</span> juga akan menghapus{" "}
+            Deleting <span className="font-medium text-zinc-900">{name}</span> will also delete{" "}
             {eventCount > 0 ? (
               <>
-                <span className="font-medium text-zinc-900">{eventCount} jadwal</span> beserta
-                seluruh link subtes dan riwayat rekapnya.
+                its <span className="font-medium text-zinc-900">{eventCount} schedule{eventCount === 1 ? "" : "s"}</span>, along
+                with all subtest links and recap history.
               </>
             ) : (
-              <>seluruh link subtes dan riwayat rekap yang terkait.</>
+              <>all associated subtest links and recap history.</>
             )}{" "}
-            Tindakan ini tidak bisa dibatalkan.
+            This action cannot be undone.
           </>
         }
-        confirmLabel="Hapus"
+        confirmLabel="Delete"
         danger
         pending={pending}
         error={error}

@@ -90,7 +90,15 @@ model PsikotesEvent {
   id                String        @id @default(cuid())
   schoolId          String
   school            School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  scheduledDate     DateTime
+  // Nullable (user request, post-Phase-19) — every School now gets its
+  // PsikotesEvent created automatically at school-creation time, whether or
+  // not a test date is known yet. Null shows as "Date not set yet" in the
+  // UI and is set/changed via an inline editor on the schedule's detail
+  // page (no separate create/edit route anymore). A null date can never
+  // satisfy the cron's `scheduledDate <= today` filter or the manual "Mulai
+  // Psikotes" gate (both require a real date) — SQL NULL comparisons are
+  // never true, so this falls out naturally, not as a special case.
+  scheduledDate     DateTime?
   status            EventStatus   @default(SCHEDULED)
   links             SubtestLink[]
   recapJobs         RecapJob[]

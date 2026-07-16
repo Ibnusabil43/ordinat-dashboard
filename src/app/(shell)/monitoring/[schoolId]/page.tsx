@@ -27,11 +27,11 @@ import { buildLinkCopyText } from "@/lib/format";
  * actually tries and throws — different problems, different messages.
  *
  * "Link" + "Cek Nama" + "Kelas & Tester" tabs below the summary — TESTER
- * can't reach Event Detail or the Sekolah > Kelas page (both ADMIN/
+ * can't reach Event Detail or the Classes menu (both ADMIN/
  * PIC_LAPANGAN only), so Monitoring is this role's only way to see subtest
  * links AND kelas/tester assignments at all. "Kelas & Tester" is
  * deliberately read-only here (reuses the same TesterTable as Event
- * Detail's own Tester tab) — editing stays on Sekolah > Kelas, whose
+ * Detail's own Tester tab) — editing stays on the Classes menu, whose
  * server actions require requireStaff() and would just error for TESTER.
  * Independent of driveRawSheetId, same reasoning as Link.
  */
@@ -67,20 +67,20 @@ export default async function SchoolMonitoringPage({
         className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
       >
         <ArrowLeft aria-hidden="true" size={16} />
-        Kembali
+        Back
       </Link>
 
       <PageHeader
         title={school.name}
-        description="Ringkasan submisi psikotes."
+        description="Psychotest submission summary."
         action={school.driveRawSheetId ? <RefreshDataButton /> : undefined}
       />
 
       {!school.driveRawSheetId ? (
         <EmptyState
           icon={AlertTriangle}
-          title="Sheet RAW belum diatur"
-          description={`Atur Drive Raw Sheet ID untuk ${school.name} di halaman Manajemen Sekolah agar data submisi bisa dipantau di sini.`}
+          title="RAW sheet not set up"
+          description={`Set the Drive Raw Sheet ID for ${school.name} in Schools to monitor submission data here.`}
         />
       ) : (
         // Streamed: the Sheets read is the slow part, so the page shell + tabs
@@ -112,21 +112,21 @@ export default async function SchoolMonitoringPage({
             },
             {
               key: "cek-nama",
-              label: "Cek Nama",
+              label: "Name Check",
               content: school.driveRawSheetId ? (
                 <NameCheck schoolId={school.id} kelasCount={kelas.length} />
               ) : (
                 <EmptyState
                   icon={AlertTriangle}
-                  title="Sheet RAW belum diatur"
-                  description="Cek Nama butuh Drive Raw Sheet ID — atur di halaman Manajemen Sekolah."
+                  title="RAW sheet not set up"
+                  description="Name Check needs a Drive Raw Sheet ID — set it up in Schools."
                   className="py-6"
                 />
               ),
             },
             {
               key: "kelas-tester",
-              label: "Kelas & Tester",
+              label: "Classes & Tester",
               content: (
                 <TesterTable
                   rows={kelas.map((k) => ({ id: k.id, kelas: k.name, tester: k.tester }))}
@@ -148,8 +148,8 @@ async function SummarySection({ schoolId }: { schoolId: string }) {
     return (
       <EmptyState
         icon={AlertTriangle}
-        title="Gagal memuat data"
-        description="Sheet RAW tidak bisa diakses — cek apakah sudah dibagikan ke service account, atau coba lagi."
+        title="Failed to load data"
+        description="The RAW sheet couldn't be accessed — check that it's shared with the service account, or try again."
       />
     );
   }

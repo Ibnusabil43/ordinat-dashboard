@@ -1,18 +1,23 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plus, Pencil, School } from "lucide-react";
 import { getSchools, type SchoolListItem } from "@/lib/queries/schools";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { DeleteSchoolButton } from "@/components/admin/DeleteSchoolButton";
+import { getCurrentRole } from "@/lib/auth-guard";
 
+/** ADMIN-only page (Phase 19, BE-P1) — PIC_LAPANGAN's Sidebar hides the link, but a direct URL must still bounce. */
 export default async function SchoolListPage() {
+  if ((await getCurrentRole()) !== "ADMIN") redirect("/");
+
   const schools = await getSchools();
 
   const columns: DataTableColumn<SchoolListItem>[] = [
     {
       key: "name",
-      header: "Nama",
+      header: "Name",
       render: (s) => <span className="font-medium text-zinc-900">{s.name}</span>,
     },
     {
@@ -22,12 +27,12 @@ export default async function SchoolListPage() {
     },
     {
       key: "events",
-      header: "Jumlah Jadwal",
+      header: "Schedules",
       render: (s) => s._count.events,
     },
     {
       key: "actions",
-      header: "Aksi",
+      header: "Actions",
       className: "text-right",
       render: (s) => (
         <div className="flex items-center justify-end gap-1">
@@ -47,15 +52,15 @@ export default async function SchoolListPage() {
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <PageHeader
-        title="Manajemen Sekolah"
-        description="Kelola daftar sekolah yang mengikuti psikotes."
+        title="Schools"
+        description="Manage the list of schools running psychotests."
         action={
           <Link
             href="/sekolah/baru"
             className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
           >
             <Plus aria-hidden="true" size={18} />
-            Tambah Sekolah
+            Add School
           </Link>
         }
       />
@@ -67,15 +72,15 @@ export default async function SchoolListPage() {
         emptyState={
           <EmptyState
             icon={School}
-            title="Belum ada sekolah terdaftar"
-            description="Tambahkan sekolah pertama untuk mulai menjadwalkan psikotes."
+            title="No schools yet"
+            description="Add the first school to start scheduling psychotests."
             action={
               <Link
                 href="/sekolah/baru"
                 className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700"
               >
                 <Plus aria-hidden="true" size={18} />
-                Tambah Sekolah
+                Add School
               </Link>
             }
           />

@@ -7,13 +7,13 @@ import { SUBTEST_CODES } from "@/lib/constants";
 import { extractDriveResourceId } from "@/lib/drive-id";
 
 export const schoolSchema = z.object({
-  name: z.string().trim().min(3, "Nama sekolah minimal 3 karakter"),
-  // slug dipakai di URL tiny.cc — huruf/angka/dash saja, uppercase.
+  name: z.string().trim().min(3, "School name must be at least 3 characters"),
+  // slug is used in the tiny.cc URL — letters/numbers/dash only, uppercase.
   slug: z
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z0-9-]+$/, "Slug hanya boleh huruf, angka, dan tanda '-'"),
+    .regex(/^[A-Z0-9-]+$/, "Slug may only contain letters, numbers, and '-'"),
   // Persisted School column (BE-L1) — the ID of the one spreadsheet with 12
   // tabs Monitoring reads from. Accepts either a bare ID or a pasted full
   // Sheets URL — extractDriveResourceId pulls the ID out either way, so the
@@ -38,33 +38,35 @@ export type SchoolInput = z.infer<typeof schoolSchema>;
 // Kelas: name is required, tester is optional free text (BE-G1). Both fields
 // are submitted independently from inline-editable table cells (FE-K2), so
 // each is validated on its own rather than as one combined object.
-export const kelasNameSchema = z.string().trim().min(1, "Nama kelas wajib diisi");
+export const kelasNameSchema = z.string().trim().min(1, "Class name is required");
 export const kelasTesterSchema = z
   .string()
   .trim()
   .transform((v) => v || null);
 
-export const eventSchema = z.object({
-  schoolId: z.string().min(1, "Pilih sekolah").cuid("Sekolah tidak valid"),
-  // Kept as a string so we control the (Indonesian) messages; coerce.date's
-  // invalid-date message can't be overridden reliably. Transformed to a Date
-  // for Prisma. Input is "YYYY-MM-DD" from <input type="date">.
-  scheduledDate: z
-    .string()
-    .min(1, "Tanggal wajib diisi")
-    .refine((s) => !Number.isNaN(new Date(s).getTime()), "Tanggal tidak valid")
-    .transform((s) => new Date(s)),
-});
-export type EventInput = z.infer<typeof eventSchema>;
+// Used by the inline date editor on the schedule's detail page (user
+// request, post-19-7 — the standalone create/edit event routes and their
+// shared `eventSchema` are gone; a school's PsikotesEvent is always created
+// alongside the school itself now, only its date is ever edited here).
+// Kept as a string so we control the error message; coerce.date's
+// invalid-date message can't be overridden reliably. Input is "YYYY-MM-DD"
+// from <input type="date">, transformed to a Date for Prisma. Required —
+// once you're actively setting a date via this editor, blank isn't a valid
+// submission (leaving it unset is just... not opening the editor).
+export const scheduledDateSchema = z
+  .string()
+  .min(1, "Date is required")
+  .refine((s) => !Number.isNaN(new Date(s).getTime()), "Invalid date")
+  .transform((s) => new Date(s));
 
-// Form manajemen link: peta code -> url (boleh kosong = belum diisi).
+// Link management form: map of code -> url (may be empty = not filled in yet).
 export const subtestLinksSchema = z.object({
   eventId: z.string().cuid(),
   links: z
     .array(
       z.object({
         code: z.enum(SUBTEST_CODES as [string, ...string[]]),
-        url: z.string().trim().url("URL tidak valid").or(z.literal("")),
+        url: z.string().trim().url("Invalid URL").or(z.literal("")),
       }),
     )
     .max(SUBTEST_CODES.length),
@@ -78,7 +80,7 @@ export const loginSchema = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .min(3, "Username minimal 3 karakter")
-    .regex(/^[a-z0-9_.-]+$/, "Username hanya boleh huruf kecil, angka, titik, underscore, dan dash"),
+    .min(3, "Username must be at least 3 characters")
+    .regex(/^[a-z0-9_.-]+$/, "Username may only contain lowercase letters, numbers, dots, underscores, and dashes"),
   password: z.string().min(1),
 });
