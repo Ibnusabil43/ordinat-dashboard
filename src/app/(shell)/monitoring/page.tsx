@@ -19,6 +19,7 @@ export default async function MonitoringPage() {
     {
       key: "name",
       header: "School",
+      mobile: "primary",
       render: (s) => <span className="font-medium text-zinc-900">{s.name}</span>,
     },
     {
@@ -31,6 +32,7 @@ export default async function MonitoringPage() {
       key: "actions",
       header: "Actions",
       className: "text-right",
+      mobile: "action",
       render: (s) => (
         <Link
           href={`/monitoring/${s.id}`}

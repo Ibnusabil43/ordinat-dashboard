@@ -76,13 +76,17 @@ export async function getSubmissionSummary(schoolId: string): Promise<SubtestSub
   if (!school?.driveRawSheetId) return null;
 
   const tabs = await listSheetTabs(school.driveRawSheetId);
-  // One batched read for every matched tab, instead of one call per tab.
+  // Only subtests that actually have a tab in this school's raw sheet are
+  // shown (user request) — a subtest with no matching tab isn't rendered at
+  // all, rather than as a misleading "0".
+  const presentTabs = tabs.filter((t): t is typeof t & { tabName: string } => Boolean(t.tabName));
+  // One batched read for every present tab, instead of one call per tab.
   const rowsByTab = await batchReadTabs(
     school.driveRawSheetId,
-    tabs.map((t) => t.tabName).filter((n): n is string => Boolean(n)),
+    presentTabs.map((t) => t.tabName),
   );
-  return tabs.map(({ code, label, tabName }) => {
-    const rows = tabName ? (rowsByTab.get(tabName) ?? []) : [];
+  return presentTabs.map(({ code, label, tabName }) => {
+    const rows = rowsByTab.get(tabName) ?? [];
     return { code, label, count: Math.max(rows.length - 1, 0) };
   });
 }
@@ -126,15 +130,19 @@ export async function searchNameAcrossSheets(
   if (!school?.driveRawSheetId) return null;
 
   const tabs = await listSheetTabs(school.driveRawSheetId);
-  // One batched read for every matched tab, instead of one call per tab.
+  // Only search subtests that actually have a tab in the raw sheet (user
+  // request) — an absent subtest doesn't appear in the results at all,
+  // instead of returning a misleading "not found". A subtest whose tab DOES
+  // exist but doesn't contain the name still resolves to not_found below.
+  const presentTabs = tabs.filter((t): t is typeof t & { tabName: string } => Boolean(t.tabName));
+  // One batched read for every present tab, instead of one call per tab.
   const rowsByTab = await batchReadTabs(
     school.driveRawSheetId,
-    tabs.map((t) => t.tabName).filter((n): n is string => Boolean(n)),
+    presentTabs.map((t) => t.tabName),
   );
   const targetKelas = normalizeName(kelas);
 
-  return tabs.map(({ code, label, tabName }) => {
-    if (!tabName) return emptyResult(code, label);
+  return presentTabs.map(({ code, label, tabName }) => {
     const rows = rowsByTab.get(tabName) ?? [];
     const header = rows[0] ?? [];
     const nameCol = header.findIndex((h) => h?.trim().toUpperCase() === "NAMA LENGKAP");

@@ -175,6 +175,7 @@ export function KelasManager({ schoolId, kelas }: { schoolId: string; kelas: Kel
       key: "actions",
       header: "",
       className: "w-10 text-right",
+      mobile: "action",
       render: (k) => <RemoveButton kelasId={k.id} name={k.name} />,
     },
   ];

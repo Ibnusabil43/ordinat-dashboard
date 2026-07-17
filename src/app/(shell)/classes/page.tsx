@@ -18,6 +18,7 @@ export default async function ClassesPage() {
     {
       key: "name",
       header: "School",
+      mobile: "primary",
       render: (s) => <span className="font-medium text-zinc-900">{s.name}</span>,
     },
     {
@@ -29,6 +30,7 @@ export default async function ClassesPage() {
       key: "actions",
       header: "Actions",
       className: "text-right",
+      mobile: "action",
       render: (s) => (
         <Link
           href={`/classes/${s.id}`}

@@ -36,7 +36,7 @@ export function StartPsikotesButton({ id }: { id: string }) {
         className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Play aria-hidden="true" size={16} />
-        {pending ? "Memproses..." : "Mulai Psikotes"}
+        {pending ? "Starting..." : "Start Test"}
       </button>
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
