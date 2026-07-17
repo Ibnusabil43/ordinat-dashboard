@@ -13,7 +13,7 @@ function SubmitButton() {
       disabled={pending}
       className="flex h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
     >
-      {pending ? "Masuk..." : "Masuk"}
+      {pending ? "Signing in..." : "Sign in"}
     </button>
   );
 }

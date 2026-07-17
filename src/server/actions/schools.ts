@@ -14,8 +14,45 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { schoolSchema } from "@/lib/validations";
 import { requireAdmin } from "@/lib/auth-guard";
-import { parseActiveSubtests } from "@/lib/constants";
+import { parseActiveSubtests, resolveActiveSubtests, suggestTinyUrl } from "@/lib/constants";
 import { revalidateEventPaths } from "@/lib/event-paths";
+
+/**
+ * Ensures a default tiny.cc link exists for every ACTIVE subtest of one
+ * event (user request) — so a school's selected subtests are "already
+ * linked" the moment it's created, instead of the form merely *showing* a
+ * suggestion that was never saved (the old prefill trap that made Cek Link
+ * report "belum ada link tersimpan" for links that looked filled).
+ *
+ * `createMany` + `skipDuplicates` means this only ever FILLS gaps — it never
+ * overwrites a link that's already there (a manually-edited URL, or one from
+ * a previous run), which is what makes it safe to call on both create and
+ * update, and to backfill existing events with.
+ *
+ * Accepts a tx OR the base client (the full PrismaClient is assignable to
+ * Prisma.TransactionClient), so it works inside createSchool's transaction
+ * and standalone from updateSchool.
+ */
+async function ensureDefaultLinks(
+  tx: Prisma.TransactionClient,
+  eventId: string,
+  slug: string,
+  activeSubtests: string[],
+): Promise<void> {
+  const active = resolveActiveSubtests(activeSubtests);
+  const subtestTypes = await tx.subtestType.findMany({ select: { id: true, code: true } });
+  const idByCode = new Map(subtestTypes.map((s) => [s.code, s.id]));
+
+  const data = active
+    .map((s) => {
+      const subtestTypeId = idByCode.get(s.code);
+      return subtestTypeId ? { eventId, subtestTypeId, url: suggestTinyUrl(slug, s.code) } : null;
+    })
+    .filter((d): d is { eventId: string; subtestTypeId: string; url: string } => d !== null);
+
+  if (data.length === 0) return;
+  await tx.subtestLink.createMany({ data, skipDuplicates: true });
+}
 
 export interface SchoolActionState {
   error?: string;
@@ -93,7 +130,14 @@ export async function createSchool(
       const school = await tx.school.create({
         data: { name, slug, driveRawSheetId, driveFormFolderId, activeSubtests },
       });
-      await tx.psikotesEvent.create({ data: { schoolId: school.id, scheduledDate } });
+      const event = await tx.psikotesEvent.create({
+        data: { schoolId: school.id, scheduledDate },
+        select: { id: true },
+      });
+      // Auto-save the tiny.cc link for each active subtest, so the school is
+      // "already linked" on creation (user request) rather than the form
+      // just showing unsaved suggestions.
+      await ensureDefaultLinks(tx, event.id, slug, activeSubtests);
     });
   } catch (e) {
     if (isDuplicateSlug(e)) return { fieldErrors: { slug: DUPLICATE_SLUG_ERROR } };
@@ -102,6 +146,7 @@ export async function createSchool(
 
   revalidateSchoolPaths();
   revalidateEventPaths();
+  revalidatePath("/links");
   return {};
 }
 
@@ -124,6 +169,8 @@ export async function updateSchool(
     return { fieldErrors: { name: f.name?.[0], slug: f.slug?.[0] } };
   }
 
+  const activeSubtests = parseActiveSubtests(formData);
+
   try {
     // Prisma's unique constraint already excludes "no change" (a row keeps its
     // own slug), so a P2002 here genuinely means another school owns that slug.
@@ -134,15 +181,30 @@ export async function updateSchool(
         slug: parsed.data.slug,
         driveRawSheetId: parsed.data.driveRawSheetId,
         driveFormFolderId: parsed.data.driveFormFolderId,
-        activeSubtests: parseActiveSubtests(formData),
+        activeSubtests,
       },
     });
+
+    // Fill in default links for any subtest that's now active but has no link
+    // yet (checking a previously-unchecked subtest, or an older school created
+    // before links were auto-generated). skipDuplicates never touches an
+    // existing/manually-edited link, and a deactivated subtest keeps its row
+    // harmlessly — the form/check already hide it via resolveActiveSubtests.
+    const events = await prisma.psikotesEvent.findMany({
+      where: { schoolId: id },
+      select: { id: true },
+    });
+    for (const ev of events) {
+      await ensureDefaultLinks(prisma, ev.id, parsed.data.slug, activeSubtests);
+    }
   } catch (e) {
     if (isDuplicateSlug(e)) return { fieldErrors: { slug: DUPLICATE_SLUG_ERROR } };
     return { error: "Failed to update school. Try again." };
   }
 
   revalidateSchoolPaths();
+  revalidateEventPaths();
+  revalidatePath("/links");
   return {};
 }
 

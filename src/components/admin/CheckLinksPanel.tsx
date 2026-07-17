@@ -49,9 +49,9 @@ export function CheckLinksPanel({ eventId }: { eventId: string }) {
     <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">Cek Link</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">Check Links</h2>
           <p className="mt-0.5 text-xs text-zinc-500">
-            Pastikan tiap link tiny.cc beneran ngarah ke Google Form sekolah ini, bukan sekolah lain.
+            Confirm each tiny.cc link actually points to this school&rsquo;s Google Form, not another school&rsquo;s.
           </p>
         </div>
         <button
@@ -61,7 +61,7 @@ export function CheckLinksPanel({ eventId }: { eventId: string }) {
           className="flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Search aria-hidden="true" size={14} />
-          {isPending ? "Mengecek..." : "Cek Link"}
+          {isPending ? "Checking..." : "Check Links"}
         </button>
       </div>
 
@@ -78,9 +78,9 @@ export function CheckLinksPanel({ eventId }: { eventId: string }) {
               <div className="min-w-0">
                 <span className="font-medium">{r.label}</span>
                 {r.status === "match" && r.matchedTitle && (
-                  <span> — judul form: &ldquo;{r.matchedTitle}&rdquo;</span>
+                  <span> — form title: &ldquo;{r.matchedTitle}&rdquo;</span>
                 )}
-                {r.status === "no_link" && <span> — belum ada link tersimpan</span>}
+                {r.status === "no_link" && <span> — no link saved yet</span>}
                 {r.message && <span> — {r.message}</span>}
               </div>
             </div>

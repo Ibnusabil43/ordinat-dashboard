@@ -16,7 +16,7 @@ export default function LoginPage() {
           <div className="mb-6 flex flex-col items-center text-center">
             <Image src="/logo.png" alt="" width={48} height={48} className="mb-3" />
             <span className="text-xl font-bold tracking-tight text-zinc-900">Ordinat Dashboard</span>
-            <p className="mt-1 text-sm text-zinc-500">Masuk untuk melanjutkan.</p>
+            <p className="mt-1 text-sm text-zinc-500">Sign in to continue.</p>
           </div>
           {/* LoginForm reads useSearchParams (?next=) — Suspense boundary is
               required for static prerendering, otherwise the build bails. */}

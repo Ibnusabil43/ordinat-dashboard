@@ -145,7 +145,7 @@ export function Sidebar({ username, role }: { username: string; role: Role }) {
           className="mt-1 flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900"
         >
           <LogOut aria-hidden="true" size={18} />
-          Keluar
+          Sign out
         </button>
       </form>
     </div>
@@ -167,7 +167,7 @@ export function Sidebar({ username, role }: { username: string; role: Role }) {
         {wordmark}
         <button
           type="button"
-          aria-label="Buka menu"
+          aria-label="Open menu"
           onClick={() => setOpen(true)}
           className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100"
         >
@@ -188,7 +188,7 @@ export function Sidebar({ username, role }: { username: string; role: Role }) {
               {wordmark}
               <button
                 type="button"
-                aria-label="Tutup menu"
+                aria-label="Close menu"
                 onClick={() => setOpen(false)}
                 className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
               >

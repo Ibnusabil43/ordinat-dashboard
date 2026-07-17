@@ -18,6 +18,7 @@ export default async function SchoolListPage() {
     {
       key: "name",
       header: "Name",
+      mobile: "primary",
       render: (s) => <span className="font-medium text-zinc-900">{s.name}</span>,
     },
     {
@@ -34,6 +35,7 @@ export default async function SchoolListPage() {
       key: "actions",
       header: "Actions",
       className: "text-right",
+      mobile: "action",
       render: (s) => (
         <div className="flex items-center justify-end gap-1">
           <Link

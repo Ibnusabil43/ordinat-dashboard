@@ -30,6 +30,7 @@ export function RecentSchoolsTable({ schools }: { schools: RecentSchool[] }) {
     {
       key: "name",
       header: "School",
+      mobile: "primary",
       render: (s) => <span className="font-medium text-zinc-900">{s.name}</span>,
     },
     {

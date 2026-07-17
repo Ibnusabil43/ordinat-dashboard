@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 
 /**
- * "Salin Semua Link" — copies `text` (already formatted by buildLinkCopyText)
+ * "Copy All Links" — copies `text` (already formatted by buildLinkCopyText)
  * via the Clipboard API. The button itself is the feedback: label/icon swap
  * to a confirmed state for ~2s, then revert. Spec: DESIGN.md §5.
  */
@@ -18,7 +18,7 @@ export function CopyLinksButton({ text }: { text: string }) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard API can reject (permissions, insecure context) — fail
-      // silently; the button simply won't show the "Tersalin!" confirmation.
+      // silently; the button simply won't show the "Copied!" confirmation.
     }
   };
 
@@ -31,12 +31,12 @@ export function CopyLinksButton({ text }: { text: string }) {
       {copied ? (
         <>
           <Check aria-hidden="true" size={16} />
-          Tersalin!
+          Copied!
         </>
       ) : (
         <>
           <Copy aria-hidden="true" size={16} />
-          Salin Semua Link
+          Copy All Links
         </>
       )}
     </button>
