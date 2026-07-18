@@ -163,6 +163,47 @@ export function ResultsSummary({
         </div>
       )}
 
+      {/* Phase 20 (FE-Y3): leftover_raw is optional — undefined for a pre-Phase-20
+          Flask response, same conditional-render pattern as the two cards above. */}
+      {log.leftover_raw && log.leftover_raw.length > 0 && (
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-zinc-900">Students Not On Any Roster</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Found in RAW but not matched to any Gugus in this Recap — informational only.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 text-left text-xs font-medium text-zinc-500">
+                  <th className="px-2 py-2">Gugus</th>
+                  <th className="px-2 py-2">Name</th>
+                  <th className="px-2 py-2">Class</th>
+                  <th className="px-2 py-2">Found In</th>
+                  <th className="px-2 py-2">Closest Match</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {log.leftover_raw.map((l, i) => (
+                  <tr key={i}>
+                    <td className="px-2 py-2 text-zinc-700">Gugus {l.gugus}</td>
+                    <td className="px-2 py-2 font-medium text-zinc-900">{l.nama}</td>
+                    <td className="px-2 py-2 text-zinc-700">{l.kelas}</td>
+                    <td className="px-2 py-2">
+                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-900">
+                        {l.subtes}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 text-xs text-zinc-500">
+                      {l.closest_candidate ? `${l.closest_candidate} (${Math.round(l.best * 100)}%)` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {log.unmatched_summary.length > 0 && (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-zinc-900">Incomplete Subtests</h2>

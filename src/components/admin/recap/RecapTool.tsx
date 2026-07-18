@@ -37,7 +37,12 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
   const [st, setSt] = useState<JobStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rekapWarning, setRekapWarning] = useState<string | null>(null);
-  const [decisions, setDecisions] = useState<Record<number, boolean>>({});
+  // Regular items (value/answer_choice): boolean, default-checked — most
+  // borderline matches (0.78-0.90) are probably correct, so unchecking is the
+  // opt-out action. Leftover items: string[] of confirmed subtest codes,
+  // default empty — a leftover candidate is much lower-confidence (can be
+  // well under 0.78), so confirming a subtest is an explicit opt-in instead.
+  const [decisions, setDecisions] = useState<Record<number, boolean | string[]>>({});
   const [reviewBusy, setReviewBusy] = useState(false);
   const [driveUpload, setDriveUpload] = useState<DriveUploadState>({ status: "idle" });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -63,8 +68,8 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
         if (d.status === "awaiting_review" && d.pending) {
           setDecisions((prev) => {
             if (Object.keys(prev).length) return prev;
-            const init: Record<number, boolean> = {};
-            d.pending!.forEach((p) => (init[p.id] = true));
+            const init: Record<number, boolean | string[]> = {};
+            d.pending!.forEach((p) => (init[p.id] = p.kind === "leftover" ? [] : true));
             return init;
           });
         }
@@ -96,6 +101,15 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
   }, [jobId, selectedEventId]);
 
   const toggleDecision = (id: number) => setDecisions((d) => ({ ...d, [id]: !d[id] }));
+
+  const toggleLeftoverSubtes = (id: number, subtes: string) =>
+    setDecisions((d) => {
+      const current = Array.isArray(d[id]) ? (d[id] as string[]) : [];
+      const next = current.includes(subtes)
+        ? current.filter((s) => s !== subtes)
+        : [...current, subtes];
+      return { ...d, [id]: next };
+    });
 
   const submitReview = async () => {
     setReviewBusy(true);
@@ -209,6 +223,7 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
           pending={st.pending}
           decisions={decisions}
           onToggle={toggleDecision}
+          onToggleLeftoverSubtes={toggleLeftoverSubtes}
           onSubmit={submitReview}
           busy={reviewBusy}
         />
