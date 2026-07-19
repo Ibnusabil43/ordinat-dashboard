@@ -57,6 +57,31 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
   const processing = !!st && !TERMINAL_STATUSES.includes(st.status) && !st.error;
   const done = st?.status === "done";
 
+  // Shared by the auto-upload effect below and the manual "Upload to Drive"
+  // button in ResultsSummary — one place that actually calls the server
+  // action, so both paths share the same request/response handling.
+  const runDriveUpload = (evId: string, filename: string) => {
+    setDriveUpload({ status: "uploading" });
+    uploadRecapResultToDrive(evId, filename).then((res) => {
+      setDriveUpload(res.error ? { status: "error", message: res.error } : { status: "success" });
+    });
+  };
+
+  // Manual trigger (FE-N4b) — the auto-upload effect only fires while the
+  // browser tab that started the job is still open and mounted; closing or
+  // refreshing it before the job reaches "done" means that effect never
+  // runs, and the result silently never reaches Drive. This button works
+  // regardless of that, and doubles as a retry after a Drive failure or a
+  // manual re-sync if the previously-uploaded file was later removed from
+  // Drive. Validation before calling out: an event must be selected and the
+  // job must actually have produced a downloadable file, and a second click
+  // while one upload is already in flight is a no-op, not a duplicate call.
+  const uploadToDrive = () => {
+    if (!selectedEventId || !st?.download_filename) return;
+    if (driveUpload.status === "uploading") return;
+    runDriveUpload(selectedEventId, st.download_filename);
+  };
+
   useEffect(() => {
     if (!jobId) return;
 
@@ -78,14 +103,10 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
           if (d.error) setError(d.error);
 
           // BE-N2 — auto-upload the finished result to Drive, once per job.
+          // Best-effort only now: the manual button is the reliable path.
           if (d.status === "done" && d.download_filename && !driveUploadedRef.current) {
             driveUploadedRef.current = true;
-            setDriveUpload({ status: "uploading" });
-            uploadRecapResultToDrive(selectedEventId, d.download_filename).then((res) => {
-              setDriveUpload(
-                res.error ? { status: "error", message: res.error } : { status: "success" },
-              );
-            });
+            runDriveUpload(selectedEventId, d.download_filename);
           }
         }
       } catch {
@@ -256,6 +277,7 @@ export function RecapTool({ events }: { events: RecapPickerEventOption[] }) {
           downloadFilename={st.download_filename}
           resultFilename={resultFilename}
           driveUpload={driveUpload}
+          onUploadToDrive={uploadToDrive}
         />
       )}
     </div>

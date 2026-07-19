@@ -195,9 +195,16 @@ export async function uploadOrUpdateFile(
     // requestBody.name too, not just media — otherwise a re-run under a
     // changed naming scheme (or corrected school name) silently keeps
     // whatever name the file got on its first upload.
+    //
+    // trashed: false too — files.update happily rewrites a trashed file's
+    // content/name without un-trashing it, so a re-run against a file that
+    // was since trashed in Drive "succeeds" (no error, fresh modifiedTime)
+    // while staying invisible in the results folder. Forcing it false on
+    // every update makes a re-upload self-healing for that case instead of
+    // silently no-oping.
     const res = await drive.files.update({
       fileId: existingFileId,
-      requestBody: { name: filename },
+      requestBody: { name: filename, trashed: false },
       media,
       fields: "id",
     });

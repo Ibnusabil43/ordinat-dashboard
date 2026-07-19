@@ -65,9 +65,18 @@ export async function uploadRecapResultToDrive(
     const res = await fetch(recapToolUrl(`/download/${encodeURIComponent(downloadFilename)}`), {
       headers: recapAuthHeader(),
     });
-    if (!res.ok) return { error: "Failed to fetch the result file from the recap tool." };
+    if (!res.ok) {
+      console.error(
+        `[uploadRecapResultToDrive] recap tool returned ${res.status} for event=${eventId} file=${downloadFilename}`,
+      );
+      return { error: "Failed to fetch the result file from the recap tool." };
+    }
     bytes = Buffer.from(await res.arrayBuffer());
-  } catch {
+  } catch (e) {
+    console.error(
+      `[uploadRecapResultToDrive] couldn't reach the recap tool for event=${eventId} file=${downloadFilename}:`,
+      e,
+    );
     return { error: "Couldn't reach the recap tool." };
   }
 
@@ -79,7 +88,11 @@ export async function uploadRecapResultToDrive(
     // same ID back in and writes the same value, harmless either way.
     await prisma.psikotesEvent.update({ where: { id: eventId }, data: { driveResultFileId: fileId } });
     return { fileId };
-  } catch {
+  } catch (e) {
+    console.error(
+      `[uploadRecapResultToDrive] Drive upload failed for event=${eventId} filename="${filename}":`,
+      e,
+    );
     return { error: "Failed to upload the result to Drive." };
   }
 }

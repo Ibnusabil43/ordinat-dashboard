@@ -1,4 +1,4 @@
-import { CheckCheck, IdCard, AlertTriangle, Shuffle, Download, Cloud, CloudOff } from "lucide-react";
+import { CheckCheck, IdCard, AlertTriangle, Shuffle, Download, Cloud, CloudOff, Loader2 } from "lucide-react";
 import { clsx } from "clsx";
 import type { RecapLog } from "@/lib/recap-types";
 
@@ -17,25 +17,74 @@ export type DriveUploadState =
   | { status: "success" }
   | { status: "error"; message: string };
 
-/** Inline confirmation next to the download link — a Drive failure never blocks or hides the (still-successful) download. */
-function DriveUploadStatus({ state }: { state: DriveUploadState }) {
-  if (state.status === "idle") return null;
+/**
+ * Manual + auto Drive upload control, next to the download link. A Drive
+ * failure never blocks or hides the (still-successful) download — this is
+ * its own independent control.
+ *
+ * `onUpload` is undefined only if the caller genuinely has nothing to upload
+ * yet (FE-N4b validation lives in the caller: needs a selected event and a
+ * finished job's download_filename) — in that case every state renders as
+ * plain text, never a dead button.
+ */
+function DriveUploadControl({ state, onUpload }: { state: DriveUploadState; onUpload?: () => void }) {
   if (state.status === "uploading") {
-    return <span className="flex items-center gap-1.5 text-xs text-zinc-500">Saving to Drive...</span>;
-  }
-  if (state.status === "success") {
     return (
       <span className="flex items-center gap-1.5 text-xs text-zinc-500">
-        <Cloud aria-hidden="true" size={14} />
-        Saved to Drive
+        <Loader2 aria-hidden="true" size={14} className="animate-spin" />
+        Saving to Drive...
       </span>
     );
   }
+  if (state.status === "success") {
+    return (
+      <span className="flex items-center gap-3 text-xs text-zinc-500">
+        <span className="flex items-center gap-1.5">
+          <Cloud aria-hidden="true" size={14} />
+          Saved to Drive
+        </span>
+        {onUpload && (
+          <button
+            type="button"
+            onClick={onUpload}
+            className="cursor-pointer font-medium text-zinc-500 underline decoration-dotted underline-offset-2 hover:text-zinc-900"
+          >
+            Re-upload
+          </button>
+        )}
+      </span>
+    );
+  }
+  if (state.status === "error") {
+    return (
+      <span className="flex items-center gap-2 text-xs text-zinc-500">
+        <span className="flex items-center gap-1.5 text-zinc-400" title={state.message}>
+          <CloudOff aria-hidden="true" size={14} />
+          Failed to save to Drive
+        </span>
+        {onUpload && (
+          <button
+            type="button"
+            onClick={onUpload}
+            className="cursor-pointer font-medium text-zinc-700 underline decoration-dotted underline-offset-2 hover:text-zinc-900"
+          >
+            Retry
+          </button>
+        )}
+      </span>
+    );
+  }
+  // idle
+  if (!onUpload) return null;
   return (
-    <span className="flex items-center gap-1.5 text-xs text-zinc-400" title={state.message}>
-      <CloudOff aria-hidden="true" size={14} />
-      Failed to save to Drive
-    </span>
+    <button
+      type="button"
+      onClick={onUpload}
+      className="flex h-10 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50"
+    >
+      <Cloud aria-hidden="true" size={16} />
+      Upload to Drive
+    </button>
   );
 }
 
@@ -54,6 +103,7 @@ export function ResultsSummary({
   downloadFilename,
   resultFilename,
   driveUpload = { status: "idle" },
+  onUploadToDrive,
 }: {
   log: RecapLog;
   downloadFilename: string | null;
@@ -66,6 +116,10 @@ export function ResultsSummary({
    *  `downloadFilename` (Flask's internal job name) if somehow unavailable. */
   resultFilename?: string | null;
   driveUpload?: DriveUploadState;
+  /** Manual upload/retry/re-upload trigger (FE-N4b). Omitted entirely (not just
+   *  disabled) whenever the caller has nothing valid to upload yet — see
+   *  RecapTool's uploadToDrive() for the actual validation. */
+  onUploadToDrive?: () => void;
 }) {
   const gugusEntries = Object.entries(log.per_gugus);
   const savedAs = resultFilename ?? downloadFilename;
@@ -84,7 +138,7 @@ export function ResultsSummary({
             <Download aria-hidden="true" size={16} />
             Download Result
           </a>
-          <DriveUploadStatus state={driveUpload} />
+          <DriveUploadControl state={driveUpload} onUpload={onUploadToDrive} />
         </div>
       )}
 
