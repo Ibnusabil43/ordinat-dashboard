@@ -23,3 +23,5 @@ package.json
 
 /graphify-out
 /.claude
+.vercel
+.env*
